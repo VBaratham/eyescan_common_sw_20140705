@@ -52,8 +52,7 @@ int es_interface(int s, const void *data, size_t size) {
 			safe_sprintf( input_buf , "%s %s" , input_buf , commands[idx] );
 		}
 		safe_sprintf( input_buf , "%s\r\n" , input_buf );
-		retval = safe_send(s, input_buf);
-		return retval;
+		return safe_send(s, input_buf);
 	}
 
 	char * temp_str , ** pEnd = NULL;
@@ -124,11 +123,11 @@ int es_interface(int s, const void *data, size_t size) {
 			}
 
 			eye_scan_pixel * current_pixel = ( curr_eyescan->pixels + curr_pixel );
-			safe_sprintf( input_buf , "%s%d %d %d: %d %d %d %d\r\n" , input_buf, curr_pixel , \
-					current_pixel->h_offset , current_pixel->v_offset , \
-					current_pixel->error_count , current_pixel->sample_count , \
-					current_pixel->prescale & 0x001F , current_pixel->prescale & 0x0020 << 5 );
-    	}
+            safe_sprintf( input_buf , "%s%d %d %d: %d %d %d %d %ld\r\n" , input_buf, \
+                        curr_pixel ,  \
+                    current_pixel->h_offset , current_pixel->v_offset , \
+                    current_pixel->error_count , current_pixel->sample_count , \
+                    current_pixel->prescale & 0x001F , current_pixel->ut_sign , current_pixel->center_error );    	}
 		return safe_send(s, input_buf);
     }
 
@@ -183,8 +182,7 @@ int es_interface(int s, const void *data, size_t size) {
     	if( number_tokens != 2 ) {
     		memset( input_buf , 0 , RECV_BUF_SIZE+1 );
     		safe_sprintf( input_buf , "Syntax: esdisable <lane> \r\n");
-    		retval = safe_send( s , input_buf );
-    		return 0;
+    		return safe_send( s , input_buf );
     	}
     	int curr_lane = strtoul( tokens[1] , pEnd , 0);
     	eye_scan * curr_eyescan = get_eye_scan_lane( curr_lane );
@@ -284,6 +282,7 @@ int es_interface(int s, const void *data, size_t size) {
 				values[idx] = *tval;
 			}
     	}
+    	return retval;
     }
 
     if( command_type == MRD ) {
@@ -298,6 +297,7 @@ int es_interface(int s, const void *data, size_t size) {
             safe_sprintf( input_buf , format_string , addresses[idx] , values[idx] );
             retval = safe_send(s, input_buf);
         }
+        return retval;
     }
 
     if( command_type == DEBUG ) {
