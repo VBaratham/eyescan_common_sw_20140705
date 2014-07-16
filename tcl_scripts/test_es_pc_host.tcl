@@ -16,6 +16,7 @@ proc run_test {} {
         
         # horz_step: Horizontal sweep step size. Min value is 1. Max value depends on data rate mode (see user guide & rate variable below)
         set horz_step($i) 8
+        # set horz_step($i) 255
         
         # vert_step: Vertical sweep step size. Min value is 1. Max value is 127.
         # set vert_step($i) 8
@@ -29,7 +30,7 @@ proc run_test {} {
         set data_width($i) 40
 
         # lpm_mode: Set to 1 for LPM mode. Set to 0 for DFE mode.
-        set lpm_mode($i) 0
+        set lpm_mode($i) 1
 
         # rate: Set depending on full, half, quarter, octal, or hex modes (see user guide)
         set rate($i) 256
