@@ -28,16 +28,14 @@
 sem_t eyescan_sem[4];
 
 void eyescan_lock(int lane) {
-	return;
-	//if( sem_wait( &eyescan_sem[lane%4] ) == -1 ) {
-		//sem_init( &eyescan_sem[lane%4] , 0 , 1 );
-		//sem_wait( &eyescan_sem[lane%4] );
-	//}
+	if( sem_wait( &eyescan_sem[lane%4] ) == -1 ) {
+		sem_init( &eyescan_sem[lane%4] , 0 , 1 );
+		sem_wait( &eyescan_sem[lane%4] );
+	}
 }
 
 void eyescan_unlock(int lane) {
-	return;
-	//sem_post( &eyescan_sem[lane%4] );
+	sem_post( &eyescan_sem[lane%4] );
 }
 
 #define MAX_NUMBER_OF_LANES 48
@@ -296,7 +294,7 @@ void eyescan_debugging( int lane , char * dbgstr ) {
 }
 
 void eyescan_debug_addr( int lane , u32 drp_addr , char * dbgstr ) {
-	safe_sprintf( dbgstr , "lane %d addr 0x%04x val 0x%04x" , lane , drp_addr , xaxi_eyescan_read_channel_drp( lane , drp_addr ) );
+	safe_sprintf( dbgstr , "lane %d addr 0x%04x val 0x%04x\r\n" , lane , drp_addr , xaxi_eyescan_read_channel_drp( lane , drp_addr ) );
 	return;
 }
 
