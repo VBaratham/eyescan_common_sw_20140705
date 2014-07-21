@@ -21,14 +21,11 @@ proc send_socket {options} {
     set ip_port 7
 
     set retval $options
-    puts "$options"
-    if { 1 } {
     set chan [socket $ip_address $ip_port]
     puts $chan "$options"
     flush $chan
     set retval [gets $chan]
     close $chan
-    }
     
     return $retval
 }
@@ -42,6 +39,7 @@ proc mrd {options} {
 }
 
 proc esinit {options} {
+	puts "esinit $options"
     return [send_socket "esinit $options"]
 }
 
@@ -54,6 +52,7 @@ proc esdone {options} {
 }
 
 proc esdisable {options} {
+	puts "esdisable $options"
     return [send_socket "esdisable $options"]
 }
 
@@ -258,6 +257,10 @@ proc es_host_run {test_ch_a horz_step_a vert_step_a lpm_mode_a rate_a max_presca
             if {$test_done($curr_ch) == 0} {
 #                 set curr_status_str [es_host_read_mb $LANE_OFFSET($curr_ch) $UPLOAD_RDY_OFFSET 1]
                 set curr_status_str [esdone $curr_ch]
+                if { $curr_ch == 0 } {
+                	set npixels [esread $curr_ch]
+                	puts "Finished $npixels pixels"
+            	}
                 set curr_status [lindex [split $curr_status_str ": "] end]
                     #TODO: Prev lines must read the "status" field of the current lane's eyescan struct and check if it's -1 (DONE state)
                 if {$curr_status == 1} {
@@ -267,10 +270,18 @@ proc es_host_run {test_ch_a horz_step_a vert_step_a lpm_mode_a rate_a max_presca
 #                     set es_data [es_host_read_mb $LANE_OFFSET($curr_ch) $ES_DATA_OFFSET $NUM_PIXELS]
                     set npixels [esread $curr_ch]
                     puts "number of pixels: $npixels"
+                    
+                    set ip_address 192.168.1.99
+                    set ip_port 7
+                    set chan [socket $ip_address $ip_port]
+                    puts $chan "esread $curr_ch $npixels"
                     for { set pixel_idx 0 } { $pixel_idx < $npixels } { incr pixel_idx } {
-                        set es_data [esread "$curr_ch $pixel_idx"]
+                        #set es_data [esread "$curr_ch $pixel_idx"]
+                        flush $chan
+                        set es_data [gets $chan]
                         puts $dumpfile $es_data
                     }
+                    close $chan
                     close $dumpfile
 		    puts $curr_status
 		    puts "SCAN IS DONE"
