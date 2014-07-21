@@ -118,17 +118,29 @@ int es_interface(int s, const void *data, size_t size) {
     	else {
 			int curr_pixel = strtoul( tokens[2] , pEnd , 0 );
 
-			if( curr_pixel >= curr_eyescan->pixel_count ) {
-				return 0;
+            int begin_pixel = curr_pixel;
+            int end_pixel = curr_pixel + 1;
+            
+			if( curr_pixel == curr_eyescan->pixel_count ) {
+				begin_pixel = 0;
+                end_pixel = curr_eyescan->pixel_count;
 			}
-
-			eye_scan_pixel * current_pixel = ( curr_eyescan->pixels + curr_pixel );
-            safe_sprintf( input_buf , "%s%d %d %d: %d %d %d %d %ld\r\n" , input_buf, \
-                        curr_pixel ,  \
+			else if( curr_pixel > curr_eyescan->pixel_count ) {
+                return 0;
+            }
+            
+            for( idx = begin_pixel ; idx <= end_pixel ; idx++ ) {
+                memset( input_buf , 0 , RECV_BUF_SIZE+1 );
+                eye_scan_pixel * current_pixel = ( curr_eyescan->pixels + idx );
+                safe_sprintf( input_buf , "%s%d %d %d: %d %d %d %d %ld\r\n" , input_buf, \
+                		idx ,  \
                     current_pixel->h_offset , current_pixel->v_offset , \
                     current_pixel->error_count , current_pixel->sample_count , \
-                    current_pixel->prescale & 0x001F , current_pixel->ut_sign , current_pixel->center_error );    	}
-		return safe_send(s, input_buf);
+                    current_pixel->prescale & 0x001F , current_pixel->ut_sign , current_pixel->center_error );
+                retval = safe_send(s, input_buf);
+            }
+            return retval;
+        }
     }
 
     if( command_type == ESREAD ) {
