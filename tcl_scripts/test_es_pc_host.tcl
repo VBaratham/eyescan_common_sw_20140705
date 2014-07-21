@@ -19,9 +19,9 @@ proc run_test {} {
         # set horz_step($i) 255
         
         # vert_step: Vertical sweep step size. Min value is 1. Max value is 127.
-        # set vert_step($i) 8
+        set vert_step($i) 8
         # use this setting to generate 1-d bathtub plots
-        set vert_step($i) 127
+        # set vert_step($i) 127
         
         # max_prescale: Maximum prescale value for sample count. Min value is 0. Max value is 31.
         set max_prescale($i) 8
@@ -30,7 +30,7 @@ proc run_test {} {
         set data_width($i) 40
 
         # lpm_mode: Set to 1 for LPM mode. Set to 0 for DFE mode.
-        set lpm_mode($i) 1
+        set lpm_mode($i) 0
 
         # rate: Set depending on full, half, quarter, octal, or hex modes (see user guide)
         set rate($i) 256
