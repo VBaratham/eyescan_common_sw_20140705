@@ -220,8 +220,7 @@ void es_simple_eye_acq(eye_scan *eye_struct)
 			}
 			drp_write(next_prescale,ES_PRESCALE, eye_struct->lane_number);
 		}
-		//printf( "lane %d pixel_count %d error_count %d sample_count %d prescale %d\n" , eye_struct->lane_number , \
-				//eye_struct->pixel_count , error_count , sample_count , prescale );
+		//printf( "lane %d pixel_count %d error_count %d sample_count %d prescale %d\n" , eye_struct->lane_number , eye_struct->pixel_count , error_count , sample_count , prescale );
 		eye_struct->prescale = prescale;
 
 		// Store information about current pixel
@@ -235,7 +234,7 @@ void es_simple_eye_acq(eye_scan *eye_struct)
 		current_pixel->prescale = eye_struct->prescale;
 		eye_struct->pixel_count++;
 		//if( eye_struct->pixel_count % 10 == 0 ) {
-		//	printf( "lane %d at pixel %d\n" , eye_struct->lane_number , eye_struct->pixel_count );
+			//printf( "lane %d at pixel %d\n" , eye_struct->lane_number , eye_struct->pixel_count );
 		//}
 
 		//Transition to SETUP state
