@@ -21,7 +21,7 @@
 #include "es_controller.h"
 #include "SysStatus.h"
 
-#define NTELNETCOMMANDS 14
+#define NTELNETCOMMANDS 15
 #define NTELNETTOKENS 20
 #define RECV_BUF_SIZE 2048
 
@@ -43,7 +43,7 @@ int es_interface(int s, const void *data, size_t size) {
 	memset( input_buf , 0 , RECV_BUF_SIZE+1 );
 	strncpy( input_buf , data , size );
 
-	char *commands[NTELNETCOMMANDS] = { "esinit" , "esread" , "esdone" , "esdisable" , "mwr" , "mrd" , "debug" , "dbgeyescan" , "initclk" , "readclk" , "printupod" , "iicr" , "iicw" , "printtemp" };
+	char *commands[NTELNETCOMMANDS] = { "esinit" , "esread" , "esdone" , "esdisable" , "mwr" , "mrd" , "debug" , "dbgeyescan" , "initclk" , "readclk" , "printupod" , "iicr" , "iicw" , "printtemp" , "globalinit" };
 
 	if( !strncmp( input_buf , "h" , 1 ) || !strncmp( input_buf , "H" , 1 ) ) {
 		memset( input_buf , 0 , RECV_BUF_SIZE+1 );
@@ -56,7 +56,7 @@ int es_interface(int s, const void *data, size_t size) {
 	}
 
 	char * temp_str , ** pEnd = NULL;
-	typedef enum { ESINIT = 0 , ESREAD = 1 , ESDONE = 2 , ESDISABLE = 3 , MWR = 4 , MRD = 5 , DEBUG = 6 , DBGEYESCAN = 7 , INITCLK = 8 , READCLK = 9 , PRINTUPOD = 10 , IICR = 11 , IICW = 12 , PRINTTEMP = 13 } command_type_t;
+	typedef enum { ESINIT = 0 , ESREAD = 1 , ESDONE = 2 , ESDISABLE = 3 , MWR = 4 , MRD = 5 , DEBUG = 6 , DBGEYESCAN = 7 , INITCLK = 8 , READCLK = 9 , PRINTUPOD = 10 , IICR = 11 , IICW = 12 , PRINTTEMP = 13 , GLOBALINIT = 14  } command_type_t;
 	command_type_t command_type = MWR;
 
     char tokens[NTELNETTOKENS][20] = {};
@@ -85,19 +85,26 @@ int es_interface(int s, const void *data, size_t size) {
     	}
 
     	int curr_lane = strtoul( tokens[1] , pEnd , 0);
-    	eyescan_lock( curr_lane );
+    	eyescan_lock();
     	eye_scan * curr_eyescan = get_eye_scan_lane( curr_lane );
     	if( curr_eyescan == NULL ) {
     		return safe_send( s , "error, no lane found\r\n" );
     	}
+    	curr_eyescan->pixel_count = 0;
+    	curr_eyescan->state = WAIT_STATE;
+    	curr_eyescan->p_upload_rdy = 0;
+
+    	// Read values in
     	curr_eyescan->max_prescale = strtoul( tokens[2] , pEnd , 0);
     	curr_eyescan->horz_step_size = strtoul( tokens[3] , pEnd , 0);
     	curr_eyescan->data_width = strtoul( tokens[4] , pEnd , 0);
     	curr_eyescan->vert_step_size = strtoul( tokens[5] , pEnd , 0);
     	curr_eyescan->lpm_mode = strtoul( tokens[6] , pEnd , 0);
     	curr_eyescan->max_horz_offset = strtoul( tokens[7] , pEnd , 0); // same as rate?
-    	curr_eyescan->enable = 1;
-    	eyescan_unlock( curr_lane );
+        
+    	curr_eyescan->enable = TRUE; // enable the lane
+    	curr_eyescan->initialized = FALSE; // need to reinitialize lane
+    	eyescan_unlock();
         return 0;
     }
 
@@ -114,6 +121,7 @@ int es_interface(int s, const void *data, size_t size) {
     	}
     	if( number_tokens == 2 ) {
     		safe_sprintf( input_buf , "%d\r\n" , curr_eyescan->pixel_count );
+    		return safe_send(s, input_buf);
     	}
     	else {
 			int curr_pixel = strtoul( tokens[2] , pEnd , 0 );
@@ -143,37 +151,6 @@ int es_interface(int s, const void *data, size_t size) {
         }
     }
 
-    if( command_type == ESREAD ) {
-    	memset( input_buf , 0 , RECV_BUF_SIZE+1 );
-    	if( number_tokens != 3 && number_tokens != 2 ) {
-    		safe_sprintf( input_buf , "Syntax: esread <lane> <pixel>\r\n");
-    		return safe_send( s , input_buf );
-    	}
-    	int curr_lane = strtoul( tokens[1] , pEnd , 0 );
-    	eye_scan * curr_eyescan = get_eye_scan_lane( curr_lane );
-    	if( curr_eyescan == NULL ) {
-    		return safe_send( s , "error, no lane found\r\n" );
-    	}
-    	if( number_tokens == 2 ) {
-    		safe_sprintf( input_buf , "%d\r\n" , curr_eyescan->pixel_count );
-    	}
-    	else {
-			int curr_pixel = strtoul( tokens[2] , pEnd , 0 );
-
-			if( curr_pixel >= curr_eyescan->pixel_count ) {
-				return 0;
-			}
-
-			eye_scan_pixel * current_pixel = ( curr_eyescan->pixels + curr_pixel );
-			safe_sprintf( input_buf , "%s%d %d %d: %d %d %d %d %ld\r\n" , input_buf, \
-				        curr_pixel ,  \
-					current_pixel->h_offset , current_pixel->v_offset , \
-					current_pixel->error_count , current_pixel->sample_count , \
-					current_pixel->prescale & 0x001F , current_pixel->ut_sign , current_pixel->center_error );
-    	}
-		return safe_send(s, input_buf);
-    }
-
     if( command_type == ESDONE ) {
     	if( number_tokens != 2 ) {
     		memset( input_buf , 0 , RECV_BUF_SIZE+1 );
@@ -183,6 +160,9 @@ int es_interface(int s, const void *data, size_t size) {
     	int curr_lane = strtoul( tokens[1] , pEnd , 0);
     	int is_ready = FALSE;
     	eye_scan * curr_eyescan = get_eye_scan_lane( curr_lane );
+        if( curr_eyescan == NULL ) {
+            return safe_send( s , "error, no lane found\r\n" );
+        }
     	is_ready = curr_eyescan->p_upload_rdy;
 
     	memset( input_buf , 0 , RECV_BUF_SIZE+1 );
@@ -198,7 +178,7 @@ int es_interface(int s, const void *data, size_t size) {
     	}
     	int curr_lane = strtoul( tokens[1] , pEnd , 0);
     	eye_scan * curr_eyescan = get_eye_scan_lane( curr_lane );
-    	curr_eyescan->enable = 0;
+    	curr_eyescan->enable = FALSE;
     	return 0;
     }
 
@@ -568,6 +548,10 @@ int es_interface(int s, const void *data, size_t size) {
             return -2;
         }
         return w;
+    }
+    
+    if( command_type == GLOBALINIT ) {
+        global_reset_eye_scan();
     }
 
 	return retval;
