@@ -36,6 +36,10 @@ u16 drp_write (u16 value, u8 attr_name, u8 lane_num) {
 	value = ((curr_value & drp_mask[attr_name]) | (value << drp_start_bit[attr_name]));
 	//printf( "drp_write value after 0x%x\n" , value );
     xaxi_eyescan_write_channel_drp(lane_num, drp_addr[attr_name], value);
+    u16 new_value = (u16) xaxi_eyescan_read_channel_drp(lane_num, drp_addr[attr_name]);
+    if( new_value != value ) {
+    	printf( "drp_write to 0x%x expected 0x%x observed 0x%x\n" , drp_addr[attr_name] , value , new_value );
+    }
     return (u16) xaxi_eyescan_read_channel_drp(lane_num, drp_addr[attr_name]);
 }
 
