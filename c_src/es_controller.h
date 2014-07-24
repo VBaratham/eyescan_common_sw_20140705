@@ -44,6 +44,7 @@ typedef struct {
 
 typedef struct {
 	u8 enable; //enable this lane
+	u8 initialized; // have we been initialized?
   
 	//Scan parameters defined by user:
 	u8  lpm_mode;			//Equalizer mode: 1 for LPM. 0 for DFE
@@ -72,10 +73,11 @@ typedef struct {
 eye_scan * get_eye_scan_lane( int lane );
 
 //void write_es_data (eye_scan* p_lane, XIOModule* p_io_mod, u16 lane_offset);
-int init_eye_scan (eye_scan* p_lane, u8 lane_offset);
+int init_eye_scan(eye_scan* p_lane, u8 lane_offset);
+void global_reset_eye_scan();
 
-void eyescan_lock(int lane);
-void eyescan_unlock(int lane);
+void eyescan_lock();
+void eyescan_unlock();
 
 void eyescan_global_debug( char * dbgstr );
 void eyescan_debugging( int lane , char * dbgstr );
