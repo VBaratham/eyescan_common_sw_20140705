@@ -19,21 +19,27 @@ proc run_test {} {
         # set horz_step($i) 255
         
         # vert_step: Vertical sweep step size. Min value is 1. Max value is 127.
-        set vert_step($i) 8
+        # set vert_step($i) 8
         # use this setting to generate 1-d bathtub plots
-        # set vert_step($i) 127
+        set vert_step($i) 127
         
         # max_prescale: Maximum prescale value for sample count. Min value is 0. Max value is 31.
         set max_prescale($i) 8
         
         # data_width: Parallel data width interface. Valid values are 16, 20, 32, 40.
-        set data_width($i) 40
+        set data_width($i) 20
+        #set data_width($i) 40
 
         # lpm_mode: Set to 1 for LPM mode. Set to 0 for DFE mode.
         set lpm_mode($i) 0
 
         # rate: Set depending on full, half, quarter, octal, or hex modes (see user guide)
+        #full=32,half=64,qrtr=128,octal=256,hex=512
+        #set rate($i) 32			
+        #set rate($i) 64
+        set rate($i) 128
         set rate($i) 256
+        #set rate($i) 512
         
         # out_file: Set to desired raw output file name.
         set out_file($i) "Ch$i.dump"
