@@ -56,6 +56,10 @@ proc esdisable {options} {
     return [send_socket "esdisable $options"]
 }
 
+proc globalinit {{options ""}} {
+    return [send_socket "globalinit"]
+}
+
 proc es_host_write_mb {base_addr offset val {data_size w} } {
     mwr [expr {$base_addr + $offset}] $val 1 $data_size
     set retval [mrd [expr {$base_addr + $offset}] 1 $data_size]
@@ -193,39 +197,15 @@ proc es_host_run {test_ch_a horz_step_a vert_step_a lpm_mode_a rate_a max_presca
     if {$valid_entry == 0} {
         return 0
     }
-    
-    #Variable addresses in MB address space
-    array set LANE_OFFSET  [list 0 0xC0004000 1 0xC0004800 2 0xC0005000 3 0xC0005800]
-    set TEST_ENABLE_OFFSET 0
-    set RATE_OFFSET        4
-    set LPM_MODE_OFFSET    8
-    set UPLOAD_RDY_OFFSET  12
-    set HORZ_STEP_OFFSET   16
-    set DWIDTH_OFFSET      18
-    set VERT_STEP_OFFSET   20
-    set MAX_PRESCALE_OFFSET 22
-    set ES_DATA_OFFSET     24
-    set NUM_PIXELS 506
-    
-    # Stop processor to access processor
-#     stop
+
+    # first do a global reset
+    globalinit
+    # now write settings to each channel, start dump files
     foreach curr_ch [array names test_ch] {
         if {$test_ch($curr_ch) == 1} {
             puts "Writing settings to channel $curr_ch ..."
             
             set test_done($curr_ch) 0
-            
-            # Write settings into FPGA
-#             es_host_write_mb $LANE_OFFSET($curr_ch) $MAX_PRESCALE_OFFSET $max_prescale($curr_ch) "h"
-#             es_host_write_mb $LANE_OFFSET($curr_ch) $HORZ_STEP_OFFSET    $horz_step($curr_ch) "h"
-#             es_host_write_mb $LANE_OFFSET($curr_ch) $DWIDTH_OFFSET       $data_width($curr_ch) "h"
-#             es_host_write_mb $LANE_OFFSET($curr_ch) $VERT_STEP_OFFSET    $vert_step($curr_ch) "h"
-#             es_host_write_mb $LANE_OFFSET($curr_ch) $LPM_MODE_OFFSET     $lpm_mode($curr_ch)
-#             es_host_write_mb $LANE_OFFSET($curr_ch) $RATE_OFFSET         $rate($curr_ch)
-#             
-#             # Start test
-#             es_host_write_mb $LANE_OFFSET($curr_ch) $TEST_ENABLE_OFFSET 0
-#             es_host_write_mb $LANE_OFFSET($curr_ch) $TEST_ENABLE_OFFSET 1
 
             esinit "$curr_ch $max_prescale($curr_ch) $horz_step($curr_ch) $data_width($curr_ch) $vert_step($curr_ch) $lpm_mode($curr_ch) $rate($curr_ch)"
 
@@ -236,12 +216,11 @@ proc es_host_run {test_ch_a horz_step_a vert_step_a lpm_mode_a rate_a max_presca
             puts $dumpfile "# LPM_mode: $lpm_mode($curr_ch)"
             puts $dumpfile "# Rate: $rate($curr_ch)"
             close $dumpfile
-            
+
         } else {
             set test_done($curr_ch) 1
         }
     }
-#     con
     
     set wait_time 10000
     
@@ -283,7 +262,6 @@ proc es_host_run {test_ch_a horz_step_a vert_step_a lpm_mode_a rate_a max_presca
                     }
                     close $chan
                     close $dumpfile
-		    puts $curr_status
 		    puts "SCAN IS DONE"
 		    # Test is done
 		    set test_done($curr_ch) 1
