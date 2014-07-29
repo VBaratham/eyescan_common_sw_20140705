@@ -19,11 +19,6 @@
 #include "xil_types.h"
 //#include "xiomodule.h"
 
-#define DRP_LANE0_OFFSET 8192  //Starting address for DRP on lane 0.  0x2000 or 8192
-#define DRP_LANE1_OFFSET 10240 //Starting address for DRP on lane 1.  0x2800 or 10240
-#define DRP_LANE2_OFFSET 12288 //Starting address for DRP on lane 2.  0x3000 or 12288
-#define DRP_LANE3_OFFSET 14336 //Starting address for DRP on lane 3.  0x3800 or 14336
-
 //Used as an index for arrays drp_addr, drp_mask, drp_start_bit
 #define ES_CONTROL        0
 #define ES_HORZ_OFFSET    1
@@ -45,6 +40,11 @@
 #define ES_QUAL_MASK3     17
 #define ES_QUAL_MASK4     18
 #define PMA_RSV2		  19
+#define ALIGN_COMMA_WORD  20
+#define TX_INT_DATAWIDTH  21
+#define TX_DATA_WIDTH     22
+#define RX_INT_DATAWIDTH  23
+#define RX_DATA_WIDTH     24
 
 //Constants to hold DRP address of various attributes (for 7 Series GTX transceiver)
 #define DRP_ADDR_ES_CONTROL        0x03D
@@ -67,8 +67,13 @@
 #define DRP_ADDR_ES_QUAL_MASK3     0x034
 #define DRP_ADDR_ES_QUAL_MASK4     0x035
 #define DRP_ADDR_PMA_RSV2		   0x082
+#define DRP_ADDR_ALIGN_COMMA_WORD  0x041
+#define DRP_ADDR_TX_INT_DATAWIDTH  0x06B
+#define DRP_ADDR_TX_DATA_WIDTH     0x06B
+#define DRP_ADDR_RX_INT_DATAWIDTH  0x011
+#define DRP_ADDR_RX_DATA_WIDTH     0x011
 
-static const u16 drp_addr[20] = { DRP_ADDR_ES_CONTROL,
+static const u16 drp_addr[25] = { DRP_ADDR_ES_CONTROL,
 								  DRP_ADDR_ES_HORZ_OFFSET,
 								  DRP_ADDR_ES_PRESCALE,
 								  DRP_ADDR_ES_VERT_OFFSET,
@@ -87,7 +92,12 @@ static const u16 drp_addr[20] = { DRP_ADDR_ES_CONTROL,
 								  DRP_ADDR_ES_QUAL_MASK2,
 								  DRP_ADDR_ES_QUAL_MASK3,
 								  DRP_ADDR_ES_QUAL_MASK4,
-								  DRP_ADDR_PMA_RSV2
+								  DRP_ADDR_PMA_RSV2 ,
+                                  DRP_ADDR_ALIGN_COMMA_WORD ,
+                                  DRP_ADDR_TX_INT_DATAWIDTH ,
+                                  DRP_ADDR_TX_DATA_WIDTH ,
+                                  DRP_ADDR_RX_INT_DATAWIDTH ,
+                                  DRP_ADDR_RX_DATA_WIDTH
 };
 
 //Constants to mask bits of various attributes (for 7 Series GTX transceiver)
@@ -110,13 +120,18 @@ static const u16 drp_addr[20] = { DRP_ADDR_ES_CONTROL,
 #define DRP_MASK_ES_QUAL_MASK2     0x0000
 #define DRP_MASK_ES_QUAL_MASK3     0x0000
 #define DRP_MASK_ES_QUAL_MASK4     0x0000
-#define DRP_MASK_PMA_RSV2	   0x0000
+#define DRP_MASK_PMA_RSV2          0x0000
+#define DRP_MASK_ALIGN_COMMA_WORD  0x1FFF
+#define DRP_MASK_TX_INT_DATAWIDTH  0xFFEF
+#define DRP_MASK_TX_DATA_WIDTH     0xFFF8
+#define DRP_MASK_RX_INT_DATAWIDTH  0xBFFF
+#define DRP_MASK_RX_DATA_WIDTH     0xC7FF
 
-static const u16 drp_mask[20] = {DRP_MASK_ES_CONTROL,DRP_MASK_ES_HORZ_OFFSET,DRP_MASK_ES_PRESCALE,DRP_MASK_ES_VERT_OFFSET
+static const u16 drp_mask[25] = {DRP_MASK_ES_CONTROL,DRP_MASK_ES_HORZ_OFFSET,DRP_MASK_ES_PRESCALE,DRP_MASK_ES_VERT_OFFSET
 	,DRP_MASK_ES_CONTROL_STATUS,DRP_MASK_ES_ERROR_COUNT,DRP_MASK_ES_SAMPLE_COUNT
 	,DRP_MASK_ES_EYESCAN_EN,DRP_MASK_ES_ERRDET_EN
 	,DRP_MASK_ES_SDATA_MASK0, DRP_MASK_ES_SDATA_MASK1, DRP_MASK_ES_SDATA_MASK2, DRP_MASK_ES_SDATA_MASK3, DRP_MASK_ES_SDATA_MASK4
-	,DRP_MASK_ES_QUAL_MASK0, DRP_MASK_ES_QUAL_MASK1, DRP_MASK_ES_QUAL_MASK2, DRP_MASK_ES_QUAL_MASK3, DRP_MASK_ES_QUAL_MASK4, DRP_MASK_PMA_RSV2};
+	,DRP_MASK_ES_QUAL_MASK0, DRP_MASK_ES_QUAL_MASK1, DRP_MASK_ES_QUAL_MASK2, DRP_MASK_ES_QUAL_MASK3, DRP_MASK_ES_QUAL_MASK4, DRP_MASK_PMA_RSV2, DRP_MASK_ALIGN_COMMA_WORD, DRP_MASK_TX_INT_DATAWIDTH, DRP_MASK_TX_DATA_WIDTH, DRP_MASK_RX_INT_DATAWIDTH, DRP_MASK_RX_DATA_WIDTH};
 
 //Constants to hold start bit of various attributes (for 7 Series GTX transceiver).  0 corresponds to LSB.
 #define DRP_START_BIT_ES_CONTROL     0
@@ -139,13 +154,18 @@ static const u16 drp_mask[20] = {DRP_MASK_ES_CONTROL,DRP_MASK_ES_HORZ_OFFSET,DRP
 #define DRP_START_BIT_ES_QUAL_MASK3  0
 #define DRP_START_BIT_ES_QUAL_MASK4  0
 #define DRP_START_BIT_PMA_RSV2       0
+#define DRP_START_BIT_ALIGN_COMMA_WORD  13
+#define DRP_START_BIT_TX_INT_DATAWIDTH  4
+#define DRP_START_BIT_TX_DATA_WIDTH     0
+#define DRP_START_BIT_RX_INT_DATAWIDTH  14
+#define DRP_START_BIT_RX_DATA_WIDTH     11
 
-static const u16 drp_start_bit[20] = {DRP_START_BIT_ES_CONTROL,DRP_START_BIT_ES_HORZ_OFFSET,DRP_START_BIT_ES_PRESCALE,DRP_START_BIT_ES_VERT_OFFSET
+static const u16 drp_start_bit[25] = {DRP_START_BIT_ES_CONTROL,DRP_START_BIT_ES_HORZ_OFFSET,DRP_START_BIT_ES_PRESCALE,DRP_START_BIT_ES_VERT_OFFSET
 	,DRP_START_BIT_ES_CONTROL_STATUS,DRP_START_BIT_ES_ERROR_COUNT,DRP_START_BIT_ES_SAMPLE_COUNT
 	,DRP_START_BIT_ES_EYESCAN_EN,DRP_START_BIT_ES_ERRDET_EN
 	,DRP_START_BIT_ES_SDATA_MASK0, DRP_START_BIT_ES_SDATA_MASK1, DRP_START_BIT_ES_SDATA_MASK2, DRP_START_BIT_ES_SDATA_MASK3, DRP_START_BIT_ES_SDATA_MASK4
 	,DRP_START_BIT_ES_QUAL_MASK0, DRP_START_BIT_ES_QUAL_MASK1, DRP_START_BIT_ES_QUAL_MASK2, DRP_START_BIT_ES_QUAL_MASK3, DRP_START_BIT_ES_QUAL_MASK4
-	,DRP_START_BIT_PMA_RSV2};
+	,DRP_START_BIT_PMA_RSV2, DRP_START_BIT_ALIGN_COMMA_WORD, DRP_START_BIT_TX_INT_DATAWIDTH, DRP_START_BIT_TX_DATA_WIDTH, DRP_START_BIT_RX_INT_DATAWIDTH, DRP_START_BIT_RX_DATA_WIDTH};
 
 
 #ifndef DRP_H_
@@ -155,5 +175,8 @@ u16 drp_write (u16 value, u8 pname, u8 lane_num );
 u16 drp_read  (u8 pname, u8 lane_num);
 u32 set_lane_offset (u8* lane_name);
 u16 mask_drp_rddata (u16 value, u8 start_bit, u8 end_bit);
+
+u16 drp_write_raw( u16 value , u16 drp_address , u8 start_bit , u8 end_bit , u8 lane_num );
+u16 drp_read_raw( u16 drp_address , u8 start_bit , u8 end_bit , u8 lane_num );
 
 #endif /* DRP_H_ */
