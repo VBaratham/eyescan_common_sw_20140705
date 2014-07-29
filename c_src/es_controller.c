@@ -94,76 +94,58 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
 
 	/* And then decide whether or not to enable eyescan circuitry port. */
 
-	if( 1 ) {
-    xaxi_eyescan_write_channel_drp(curr_lane,DRP_ADDR_ES_CONTROL,0x0300);
-    u16 esval = 0x2070; // Enable the eyescan circuity.
-    drp_write(esval , PMA_RSV2 , curr_lane );
-    u16 valrsv2 = drp_read( PMA_RSV2 , curr_lane );
-    //xil_printf("PMA_RSV2 = 0x%04x\n",valrsv2);
-    if( esval != valrsv2 )
-    	xil_printf("ERROR: Failed to write PMA_RSV2 with expected value\n");
-	}
+	xaxi_eyescan_write_channel_drp(curr_lane,DRP_ADDR_ES_CONTROL,0x0300);
+	u16 esval = 0x2070; // Enable the eyescan circuity.
+	drp_write(esval , PMA_RSV2 , curr_lane );
+	u16 valrsv2 = drp_read( PMA_RSV2 , curr_lane );
+	//xil_printf("PMA_RSV2 = 0x%04x\n",valrsv2);
+	if( esval != valrsv2 )
+		xil_printf("ERROR: Failed to write PMA_RSV2 with expected value\n");
 
-	xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 1);
-	xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 1);
-	xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0F00);
-	xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
-	//xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0030);
-	//xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
-	//xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x8000);
-	//xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
-
-	//xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0020);
-	//xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
-	//xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0010);
-	//xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
-
-	sleep(100);
-	u32 reset_val = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_RESET);
-	if( reset_val != 0x0000000F )
-		xil_printf("Channel %d: Reset register(init): %08x\n",curr_lane,reset_val);
-	/*
-	int retries = 0;
-	while( reset_val != 0x0000000F && retries < 2 ) {
-		xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0020);
-		xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
-		xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0010);
-		xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
-		sleep(1000);
-		reset_val = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_RESET);
-		xil_printf("Channel %d: Reset register(init): %08x\n",curr_lane,reset_val);
-		retries++;
-	}
-	*/
-
-	u32 monreg = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_MONITOR);
-	//xil_printf("Channel %d: Monitor register: %08lx\n",curr_lane,monreg);
-	u32 errcnt = monreg & 0x80FF;
-	//xil_printf("Channel %d: Error Count: %08lx\n",curr_lane,errcnt);
+	xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_CURSOR, 0x0703);
+	//xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_CURSOR, 0x8703);
 
 	//Write ES_ERRDET_EN, ES_EYESCAN_EN attributes to enable eye scan
 	drp_write(0x1, ES_EYESCAN_EN, curr_lane );
 	drp_write(0x1, ES_ERRDET_EN, curr_lane );
 
+    drp_write(0x1, ALIGN_COMMA_WORD, curr_lane);
+    
 	//Write ES_SDATA_MASK0-1 attribute based on parallel data width
 	switch (p_lane->data_width)
 		{
 		  case 40: {
+              drp_write(0x1 , TX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x1 , RX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x5 , TX_DATA_WIDTH , curr_lane );
+              drp_write(0x5 , RX_DATA_WIDTH , curr_lane );
 			  drp_write(0x0000, ES_SDATA_MASK0, curr_lane);
 			  drp_write(0x0000, ES_SDATA_MASK1, curr_lane);
 			  }
 			  break;
 		  case 32: {
+              drp_write(0x1 , TX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x1 , RX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x4 , TX_DATA_WIDTH , curr_lane );
+              drp_write(0x4 , RX_DATA_WIDTH , curr_lane );
 			  drp_write(0x00FF, ES_SDATA_MASK0, curr_lane);
 			  drp_write(0x0000, ES_SDATA_MASK1, curr_lane);
 			  }
 			  break;
 		  case 20: {
+              drp_write(0x0 , TX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x0 , RX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x3 , TX_DATA_WIDTH , curr_lane );
+              drp_write(0x3 , RX_DATA_WIDTH , curr_lane );
 			  drp_write(0xFFFF, ES_SDATA_MASK0, curr_lane);
 			  drp_write(0x000F, ES_SDATA_MASK1, curr_lane);
 			  }
 			  break;
 		  case 16: {
+              drp_write(0x0 , TX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x0 , RX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x2 , TX_DATA_WIDTH , curr_lane );
+              drp_write(0x2 , RX_DATA_WIDTH , curr_lane );
 			  drp_write(0xFFFF, ES_SDATA_MASK0, curr_lane);
 			  drp_write(0x00FF, ES_SDATA_MASK1, curr_lane);
 			  }
@@ -188,6 +170,26 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
 		drp_write(0xFFFF, i, curr_lane);
 	}
 
+#if 0
+	drp_write_raw( 0x17c , 0x04C , 0 , 9 , curr_lane );
+	drp_write_raw( 0x100 , 0x04D , 0 , 9 , curr_lane );
+	drp_write_raw( 0x100 , 0x04E , 0 , 9 , curr_lane );
+	drp_write_raw( 0x100 , 0x04F , 0 , 9 , curr_lane );
+	drp_write_raw( 0x100 , 0x050 , 0 , 9 , curr_lane );
+	drp_write_raw( 0x100 , 0x051 , 0 , 9 , curr_lane );
+	drp_write_raw( 0x100 , 0x052 , 0 , 9 , curr_lane );
+	drp_write_raw( 0x100 , 0x053 , 0 , 9 , curr_lane );
+	drp_write_raw( 0x13 , 0x045 , 10 , 15 , curr_lane );
+	drp_write_raw( 0xf , 0x046 , 10 , 15 , curr_lane );
+	drp_write_raw( 0x11c , 0x044 , 0 , 9 , curr_lane );
+	drp_write_raw( 0xf , 0x044 , 10 , 13 , curr_lane );
+	drp_write_raw( 0x100 , 0x045 , 0 , 9 , curr_lane );
+	drp_write_raw( 0x100 , 0x046 , 0 , 9 , curr_lane );
+	drp_write_raw( 0x100 , 0x047 , 0 , 9 , curr_lane );
+	drp_write_raw( 0x1 , 0x03D , 15 , 15 , curr_lane );
+	drp_write_raw( 0x1 , 0x052 , 11 , 11 , curr_lane );
+#endif
+
 	//monreg = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_MONITOR);
 	//xil_printf("Channel %d: Monitor register: %08lx\n",curr_lane,monreg);
 	//errcnt = monreg & 0x80FF;
@@ -195,8 +197,31 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
 
 	//u32 read1 = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_RESET);
 	//xil_printf("Channel %d: Reset register(init): %08x\n",curr_lane,read1);
-	
-	sleep(100);
+
+    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 1);
+    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 0);
+    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 1);
+    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 0);
+    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0F00);
+    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
+    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0020);
+    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
+    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0010);
+    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
+
+    sleep(100);
+    u32 reset_val = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_RESET);
+    if( reset_val != 0x0000000F )
+        xil_printf("Channel %d: Reset register(init): %08x\n",curr_lane,reset_val);
+
+    u32 monreg = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_MONITOR);
+    //xil_printf("Channel %d: Monitor register: %08lx\n",curr_lane,monreg);
+    u32 errcnt = monreg & 0x80FF;
+    //xil_printf("Channel %d: Error Count: %08lx\n",curr_lane,errcnt);
+
+	sleep(200);
+
+	//xil_printf( "channel %d initialized\n" , curr_lane );
 
 	return TRUE;
 }
