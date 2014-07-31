@@ -73,6 +73,7 @@ typedef struct {
 eye_scan * get_eye_scan_lane( int lane );
 
 //void write_es_data (eye_scan* p_lane, XIOModule* p_io_mod, u16 lane_offset);
+int configure_eye_scan(eye_scan* p_lane, u8 lane_offset);
 int init_eye_scan(eye_scan* p_lane, u8 lane_offset);
 void global_reset_eye_scan();
 
