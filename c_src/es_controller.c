@@ -66,8 +66,8 @@ void init_eye_scan_struct( eye_scan * p_lane ) {
 }
 
 /*
- * Function: init_eye_scan
- * Description: Initialize eye_scan data struct members and write related attributes through DRP
+ * Functions: configure_eye_scan, init_eye_scan
+ * Description: Configure/Initialize eye_scan data struct members and write related attributes through DRP
  *
  * Parameters:
  * p_lane: pointer to eye scan data structure
@@ -75,6 +75,105 @@ void init_eye_scan_struct( eye_scan * p_lane ) {
  * Returns: True if completed, False if not
  */
 
+int configure_eye_scan(eye_scan* p_lane, u8 curr_lane) {
+    u8 i;
+    
+    //Initialize other struct members to default values
+    p_lane->state = RESET_STATE;
+
+    p_lane->lane_number = curr_lane;
+    //p_lane->lane_name[0] = lane_name;
+
+    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_CURSOR, 0x0703);
+    //xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_CURSOR, 0x8703);
+
+    //Write ES_ERRDET_EN, ES_EYESCAN_EN attributes to enable eye scan
+    drp_write(0x1, ES_EYESCAN_EN, curr_lane );
+    drp_write(0x1, ES_ERRDET_EN, curr_lane );
+
+    drp_write(0x1, ALIGN_COMMA_WORD, curr_lane);
+    
+    //Write ES_SDATA_MASK0-1 attribute based on parallel data width
+    switch (p_lane->data_width)
+        {
+          case 40: {
+              drp_write(0x1 , TX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x1 , RX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x5 , TX_DATA_WIDTH , curr_lane );
+              drp_write(0x5 , RX_DATA_WIDTH , curr_lane );
+              drp_write(0x0000, ES_SDATA_MASK0, curr_lane);
+              drp_write(0x0000, ES_SDATA_MASK1, curr_lane);
+              }
+              break;
+          case 32: {
+              drp_write(0x1 , TX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x1 , RX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x4 , TX_DATA_WIDTH , curr_lane );
+              drp_write(0x4 , RX_DATA_WIDTH , curr_lane );
+              drp_write(0x00FF, ES_SDATA_MASK0, curr_lane);
+              drp_write(0x0000, ES_SDATA_MASK1, curr_lane);
+              }
+              break;
+          case 20: {
+              drp_write(0x0 , TX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x0 , RX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x3 , TX_DATA_WIDTH , curr_lane );
+              drp_write(0x3 , RX_DATA_WIDTH , curr_lane );
+              drp_write(0xFFFF, ES_SDATA_MASK0, curr_lane);
+              drp_write(0x000F, ES_SDATA_MASK1, curr_lane);
+              }
+              break;
+          case 16: {
+              drp_write(0x0 , TX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x0 , RX_INT_DATAWIDTH , curr_lane );
+              drp_write(0x2 , TX_DATA_WIDTH , curr_lane );
+              drp_write(0x2 , RX_DATA_WIDTH , curr_lane );
+              drp_write(0xFFFF, ES_SDATA_MASK0, curr_lane);
+              drp_write(0x00FF, ES_SDATA_MASK1, curr_lane);
+              }
+              break;
+          default:{
+              drp_write(0xFFFF, ES_SDATA_MASK0, curr_lane);
+              drp_write(0xFFFF, ES_SDATA_MASK1, curr_lane);
+              }
+        }
+
+    //Write SDATA_MASK2-4 attributes.  Values are same for all data widths (16, 20,32,40)
+    drp_write(0xFF00, ES_SDATA_MASK2, curr_lane);
+    for(i=ES_SDATA_MASK3; i <= ES_SDATA_MASK4; i++){
+            drp_write(0xFFFF, i, curr_lane);
+    }
+
+    //Write ES_PRESCALE attribute to 0
+    drp_write(0x0000, ES_PRESCALE, curr_lane);
+
+    //Write ES_QUAL_MASK attribute to all 1's
+    for(i = ES_QUAL_MASK0; i <= ES_QUAL_MASK4; i++){
+        drp_write(0xFFFF, i, curr_lane);
+    }
+
+#if 1
+    drp_write_raw( 0x17c , 0x04C , 0 , 9 , curr_lane );
+    drp_write_raw( 0x100 , 0x04D , 0 , 9 , curr_lane );
+    drp_write_raw( 0x100 , 0x04E , 0 , 9 , curr_lane );
+    drp_write_raw( 0x100 , 0x04F , 0 , 9 , curr_lane );
+    drp_write_raw( 0x100 , 0x050 , 0 , 9 , curr_lane );
+    drp_write_raw( 0x100 , 0x051 , 0 , 9 , curr_lane );
+    drp_write_raw( 0x100 , 0x052 , 0 , 9 , curr_lane );
+    drp_write_raw( 0x100 , 0x053 , 0 , 9 , curr_lane );
+    drp_write_raw( 0x13 , 0x045 , 10 , 15 , curr_lane );
+    drp_write_raw( 0xf , 0x046 , 10 , 15 , curr_lane );
+    drp_write_raw( 0x11c , 0x044 , 0 , 9 , curr_lane );
+    drp_write_raw( 0xf , 0x044 , 10 , 13 , curr_lane );
+    drp_write_raw( 0x100 , 0x045 , 0 , 9 , curr_lane );
+    drp_write_raw( 0x100 , 0x046 , 0 , 9 , curr_lane );
+    drp_write_raw( 0x100 , 0x047 , 0 , 9 , curr_lane );
+    drp_write_raw( 0x1 , 0x03D , 15 , 15 , curr_lane );
+    drp_write_raw( 0x1 , 0x052 , 11 , 11 , curr_lane );
+#endif
+
+    return TRUE;
+}
 
 int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
 	u8 i;
@@ -86,109 +185,16 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
 	  return FALSE;
 	}
 
-	//Initialize other struct members to default values
-	p_lane->state = RESET_STATE;
-
-	p_lane->lane_number = curr_lane;
-	//p_lane->lane_name[0] = lane_name;
+	configure_eye_scan( p_lane , curr_lane );
 
 	/* And then decide whether or not to enable eyescan circuitry port. */
 
-	xaxi_eyescan_write_channel_drp(curr_lane,DRP_ADDR_ES_CONTROL,0x0300);
 	u16 esval = 0x2070; // Enable the eyescan circuity.
 	drp_write(esval , PMA_RSV2 , curr_lane );
 	u16 valrsv2 = drp_read( PMA_RSV2 , curr_lane );
 	//xil_printf("PMA_RSV2 = 0x%04x\n",valrsv2);
 	if( esval != valrsv2 )
 		xil_printf("ERROR: Failed to write PMA_RSV2 with expected value\n");
-
-	xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_CURSOR, 0x0703);
-	//xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_CURSOR, 0x8703);
-
-	//Write ES_ERRDET_EN, ES_EYESCAN_EN attributes to enable eye scan
-	drp_write(0x1, ES_EYESCAN_EN, curr_lane );
-	drp_write(0x1, ES_ERRDET_EN, curr_lane );
-
-    drp_write(0x1, ALIGN_COMMA_WORD, curr_lane);
-    
-	//Write ES_SDATA_MASK0-1 attribute based on parallel data width
-	switch (p_lane->data_width)
-		{
-		  case 40: {
-              drp_write(0x1 , TX_INT_DATAWIDTH , curr_lane );
-              drp_write(0x1 , RX_INT_DATAWIDTH , curr_lane );
-              drp_write(0x5 , TX_DATA_WIDTH , curr_lane );
-              drp_write(0x5 , RX_DATA_WIDTH , curr_lane );
-			  drp_write(0x0000, ES_SDATA_MASK0, curr_lane);
-			  drp_write(0x0000, ES_SDATA_MASK1, curr_lane);
-			  }
-			  break;
-		  case 32: {
-              drp_write(0x1 , TX_INT_DATAWIDTH , curr_lane );
-              drp_write(0x1 , RX_INT_DATAWIDTH , curr_lane );
-              drp_write(0x4 , TX_DATA_WIDTH , curr_lane );
-              drp_write(0x4 , RX_DATA_WIDTH , curr_lane );
-			  drp_write(0x00FF, ES_SDATA_MASK0, curr_lane);
-			  drp_write(0x0000, ES_SDATA_MASK1, curr_lane);
-			  }
-			  break;
-		  case 20: {
-              drp_write(0x0 , TX_INT_DATAWIDTH , curr_lane );
-              drp_write(0x0 , RX_INT_DATAWIDTH , curr_lane );
-              drp_write(0x3 , TX_DATA_WIDTH , curr_lane );
-              drp_write(0x3 , RX_DATA_WIDTH , curr_lane );
-			  drp_write(0xFFFF, ES_SDATA_MASK0, curr_lane);
-			  drp_write(0x000F, ES_SDATA_MASK1, curr_lane);
-			  }
-			  break;
-		  case 16: {
-              drp_write(0x0 , TX_INT_DATAWIDTH , curr_lane );
-              drp_write(0x0 , RX_INT_DATAWIDTH , curr_lane );
-              drp_write(0x2 , TX_DATA_WIDTH , curr_lane );
-              drp_write(0x2 , RX_DATA_WIDTH , curr_lane );
-			  drp_write(0xFFFF, ES_SDATA_MASK0, curr_lane);
-			  drp_write(0x00FF, ES_SDATA_MASK1, curr_lane);
-			  }
-			  break;
-		  default:{
-			  drp_write(0xFFFF, ES_SDATA_MASK0, curr_lane);
-			  drp_write(0xFFFF, ES_SDATA_MASK1, curr_lane);
-			  }
-		}
-
-	//Write SDATA_MASK2-4 attributes.  Values are same for all data widths (16, 20,32,40)
-	drp_write(0xFF00, ES_SDATA_MASK2, curr_lane);
-	for(i=ES_SDATA_MASK3; i <= ES_SDATA_MASK4; i++){
-			drp_write(0xFFFF, i, curr_lane);
-	}
-
-	//Write ES_PRESCALE attribute to 0
-	drp_write(0x0000, ES_PRESCALE, curr_lane);
-
-	//Write ES_QUAL_MASK attribute to all 1's
-	for(i = ES_QUAL_MASK0; i <= ES_QUAL_MASK4; i++){
-		drp_write(0xFFFF, i, curr_lane);
-	}
-
-#if 0
-	drp_write_raw( 0x17c , 0x04C , 0 , 9 , curr_lane );
-	drp_write_raw( 0x100 , 0x04D , 0 , 9 , curr_lane );
-	drp_write_raw( 0x100 , 0x04E , 0 , 9 , curr_lane );
-	drp_write_raw( 0x100 , 0x04F , 0 , 9 , curr_lane );
-	drp_write_raw( 0x100 , 0x050 , 0 , 9 , curr_lane );
-	drp_write_raw( 0x100 , 0x051 , 0 , 9 , curr_lane );
-	drp_write_raw( 0x100 , 0x052 , 0 , 9 , curr_lane );
-	drp_write_raw( 0x100 , 0x053 , 0 , 9 , curr_lane );
-	drp_write_raw( 0x13 , 0x045 , 10 , 15 , curr_lane );
-	drp_write_raw( 0xf , 0x046 , 10 , 15 , curr_lane );
-	drp_write_raw( 0x11c , 0x044 , 0 , 9 , curr_lane );
-	drp_write_raw( 0xf , 0x044 , 10 , 13 , curr_lane );
-	drp_write_raw( 0x100 , 0x045 , 0 , 9 , curr_lane );
-	drp_write_raw( 0x100 , 0x046 , 0 , 9 , curr_lane );
-	drp_write_raw( 0x100 , 0x047 , 0 , 9 , curr_lane );
-	drp_write_raw( 0x1 , 0x03D , 15 , 15 , curr_lane );
-	drp_write_raw( 0x1 , 0x052 , 11 , 11 , curr_lane );
-#endif
 
 	//monreg = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_MONITOR);
 	//xil_printf("Channel %d: Monitor register: %08lx\n",curr_lane,monreg);
@@ -199,9 +205,9 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
 	//xil_printf("Channel %d: Reset register(init): %08x\n",curr_lane,read1);
 
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 1);
-    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 0);
+    //xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 0);
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 1);
-    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 0);
+    //xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 0);
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0F00);
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0020);
@@ -213,6 +219,10 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
     u32 reset_val = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_RESET);
     if( reset_val != 0x0000000F )
         xil_printf("Channel %d: Reset register(init): %08x\n",curr_lane,reset_val);
+
+    //u32 txuserready = xaxi_eyescan_read_channel_reg( curr_lane , XAXI_EYESCAN_TXCFG );
+    //u32 rxuserready = xaxi_eyescan_read_channel_reg( curr_lane , XAXI_EYESCAN_RXCFG );
+    //xil_printf( "txuserready 0x%08x, rxuserready 0x%08x\n" , txuserready , rxuserready );
 
     u32 monreg = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_MONITOR);
     //xil_printf("Channel %d: Monitor register: %08lx\n",curr_lane,monreg);
