@@ -101,9 +101,12 @@ int es_interface(int s, const void *data, size_t size) {
     	curr_eyescan->vert_step_size = strtoul( tokens[5] , pEnd , 0);
     	curr_eyescan->lpm_mode = strtoul( tokens[6] , pEnd , 0);
     	curr_eyescan->max_horz_offset = strtoul( tokens[7] , pEnd , 0); // same as rate?
-        
-    	curr_eyescan->enable = TRUE; // enable the lane
-    	curr_eyescan->initialized = FALSE; // need to reinitialize lane
+            	
+    	//retval = configure_eye_scan( curr_eyescan , curr_lane );
+    	
+        curr_eyescan->enable = TRUE; // enable the lane
+        curr_eyescan->initialized = FALSE; // need to reinitialize lane
+
     	eyescan_unlock();
         return 0;
     }
