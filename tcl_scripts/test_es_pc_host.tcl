@@ -15,14 +15,14 @@ proc run_test {} {
         set test_ch($i) 1
         
         # horz_step: Horizontal sweep step size. Min value is 1. Max value depends on data rate mode (see user guide & rate variable below)
-        #set horz_step($i) 4
+        #set horz_step($i) 1
         set horz_step($i) 8
         # set horz_step($i) 255
         
         # vert_step: Vertical sweep step size. Min value is 1. Max value is 127.
-        set vert_step($i) 8
+        #set vert_step($i) 8
         # use this setting to generate 1-d bathtub plots
-        #set vert_step($i) 127
+        set vert_step($i) 127
         
         # max_prescale: Maximum prescale value for sample count. Min value is 0. Max value is 31.
         set max_prescale($i) 8
