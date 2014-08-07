@@ -153,23 +153,45 @@ int configure_eye_scan(eye_scan* p_lane, u8 curr_lane) {
     }
 
 #if 1
-    drp_write_raw( 0x17c , 0x04C , 0 , 9 , curr_lane );
-    drp_write_raw( 0x100 , 0x04D , 0 , 9 , curr_lane );
-    drp_write_raw( 0x100 , 0x04E , 0 , 9 , curr_lane );
-    drp_write_raw( 0x100 , 0x04F , 0 , 9 , curr_lane );
-    drp_write_raw( 0x100 , 0x050 , 0 , 9 , curr_lane );
-    drp_write_raw( 0x100 , 0x051 , 0 , 9 , curr_lane );
-    drp_write_raw( 0x100 , 0x052 , 0 , 9 , curr_lane );
-    drp_write_raw( 0x100 , 0x053 , 0 , 9 , curr_lane );
-    drp_write_raw( 0x13 , 0x045 , 10 , 15 , curr_lane );
-    drp_write_raw( 0xf , 0x046 , 10 , 15 , curr_lane );
-    drp_write_raw( 0x11c , 0x044 , 0 , 9 , curr_lane );
-    drp_write_raw( 0xf , 0x044 , 10 , 13 , curr_lane );
-    drp_write_raw( 0x100 , 0x045 , 0 , 9 , curr_lane );
-    drp_write_raw( 0x100 , 0x046 , 0 , 9 , curr_lane );
-    drp_write_raw( 0x100 , 0x047 , 0 , 9 , curr_lane );
-    drp_write_raw( 0x1 , 0x03D , 15 , 15 , curr_lane );
-    drp_write_raw( 0x1 , 0x052 , 11 , 11 , curr_lane );
+    drp_write_raw( 0x17c , 0x04C , 0 , 9 , curr_lane ); // CHAN_BOND_SEQ_1_1
+    drp_write_raw( 0x100 , 0x04D , 0 , 9 , curr_lane ); // CHAN_BOND_SEQ_1_2
+    drp_write_raw( 0x100 , 0x04E , 0 , 9 , curr_lane ); // CHAN_BOND_SEQ_1_3
+    drp_write_raw( 0x100 , 0x04F , 0 , 9 , curr_lane ); // CHAN_BOND_SEQ_1_3
+    drp_write_raw( 0x100 , 0x050 , 0 , 9 , curr_lane ); // CHAN_BOND_SEQ_2_1
+    drp_write_raw( 0x100 , 0x051 , 0 , 9 , curr_lane ); // CHAN_BOND_SEQ_2_2
+    drp_write_raw( 0x100 , 0x052 , 0 , 9 , curr_lane ); // CHAN_BOND_SEQ_2_3
+    drp_write_raw( 0x100 , 0x053 , 0 , 9 , curr_lane ); // CHAN_BOND_SEQ_2_4
+    drp_write_raw( 0x13 , 0x045 , 10 , 15 , curr_lane ); // CLK_COR_MAX_LAT
+    drp_write_raw( 0xf , 0x046 , 10 , 15 , curr_lane ); // CLK_COR_MIN_LAT
+    drp_write_raw( 0x11c , 0x044 , 0 , 9 , curr_lane ); // CLK_COR_SEQ_1_1
+    drp_write_raw( 0xf , 0x044 , 10 , 13 , curr_lane ); // CLK_COR_SEQ_1_ENABLE
+    drp_write_raw( 0x100 , 0x045 , 0 , 9 , curr_lane ); // CLK_COR_SEQ_1_2
+    drp_write_raw( 0x100 , 0x046 , 0 , 9 , curr_lane ); // CLK_COR_SEQ_1_3
+    drp_write_raw( 0x100 , 0x047 , 0 , 9 , curr_lane ); // CLK_COR_SEQ_1_4
+    drp_write_raw( 0x1 , 0x03D , 15 , 15 , curr_lane ); // RX_DISPERR_SEQ_MATCH
+    drp_write_raw( 0x1 , 0x052 , 11 , 11 , curr_lane ); // CBCC_DATA_SOURCE_SEL
+    drp_write_raw( 0x3c , 0x1a , 0 , 7 , curr_lane ); // PD_TRANS_TIME_NONE_P2
+    drp_write_raw( 0x7 , 0x53 , 12 , 15 , curr_lane ); // CHAN_BOND_MAX_SKEW
+    drp_write_raw( 0xa01 , 0x86 , 0 , 15 , curr_lane ); // DMONITOR_CFG
+    drp_write_raw( 0xf , 0x51 , 12 , 15 , curr_lane ); // FTS_LANE_DESKEW_CFG
+    drp_write_raw( 0xf , 0x52 , 12 , 15 , curr_lane ); // FTS_DESKEW_SEQ_ENABLE
+    drp_write_raw( 0x4 , 0x9c , 0 , 5 , curr_lane ); // RXBUF_THRESH_UNDFLW
+    drp_write_raw( 0x0 , 0x13 , 0 , 2 , curr_lane ); // SATA_EIDLE_CFG
+    drp_write_raw( 0x0 , 0x3d , 14 , 14 , curr_lane ); // DEC_PCOMMA_DETECT
+    drp_write_raw( 0x0 , 0x3d , 12 , 12 , curr_lane ); // DEC_VALID_COMMA_ONLY
+    drp_write_raw( 0x0 , 0x11 , 0 , 0 , curr_lane ); // RXPRBS_ERR_LOOPBACK
+    drp_write_raw( 0x0 , 0x3d , 13 , 13 , curr_lane ); // DEC_MCOMMA_DETECT
+    drp_write_raw( 0x0 , 0x13 , 0 , 2 , curr_lane ); // SATA_EIDLE_CFG
+    drp_write_raw( 0x64 , 0x1a , 8 , 15 , curr_lane ); // PD_TRANS_TIME_TO_P2
+    //drp_write_raw( 0x1c0 , 0x5f , 0 , 15 , curr_lane ); // CPLL_LOCK_CFG
+
+
+    drp_write_raw( 0x10 , 0x074 , 11 , 15 , curr_lane ); // RX_DFE_KL_CFG2
+    drp_write_raw( 0x6 , 0x007f , 10 , 14 , curr_lane ); // RX_DFE_KL_CFG2
+    drp_write_raw( 0xc , 0x7f , 0 , 3 , curr_lane ); // RX_DFE_KL_CFG2
+    drp_write_raw( 0x4008 , 0x0a9 , 0 , 15 , curr_lane ); // RXCDR_CFG
+    drp_write_raw( 0x8000 , 0x0ab , 0 , 15 , curr_lane ); // RXCDR_CFG
+
 #endif
 
     return TRUE;
@@ -229,6 +251,8 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
     u32 errcnt = monreg & 0x80FF;
     //xil_printf("Channel %d: Error Count: %08lx\n",curr_lane,errcnt);
 
+    //configure_eye_scan( p_lane , curr_lane );
+
 	sleep(200);
 
 	//xil_printf( "channel %d initialized\n" , curr_lane );
@@ -273,8 +297,10 @@ void *es_controller_thread(char * arg)
 
     		es_simple_eye_acq(eye_scan_lanes[curr_lane]);
 
-    		if( eye_scan_lanes[curr_lane]->state == DONE_STATE )
+    		if( eye_scan_lanes[curr_lane]->state == DONE_STATE && eye_scan_lanes[curr_lane]->p_upload_rdy == 0 ) {
+    			xil_printf( "scan done lane %d\n" , curr_lane );
     			eye_scan_lanes[curr_lane]->p_upload_rdy = 1;
+    		}
     	}
     }
     free(eye_scan_lanes);
