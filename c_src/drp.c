@@ -24,7 +24,7 @@ u8 two_digit_strtoi(u8* str){
 
 u16 mask_drp_rddata (u16 value, u8 start_bit, u8 end_bit) {
 	u8 left_shift = 15 - end_bit;
-	u16 new_val = (value << left_shift) >> (start_bit + left_shift);
+	u16 new_val = ( ( value << left_shift ) & 0xFFFF ) >> (start_bit + left_shift);
 
 	return new_val;
 }
@@ -32,8 +32,8 @@ u16 mask_drp_rddata (u16 value, u8 start_bit, u8 end_bit) {
 u16 get_mask( u8 start_bit , u8 end_bit ) {
     u16 value = 0xFFFF;
     u8 left_shift = 15 - end_bit;
-    u16 new_val = (value << left_shift) >> (start_bit + left_shift);
-    new_val = new_val << start_bit;
+    u16 new_val = ( ( value << left_shift ) & 0xFFFF ) >> (start_bit + left_shift);
+    new_val = ( new_val << start_bit ) & 0xFFFF;
     new_val = ~new_val;
     return new_val;
 }
@@ -42,7 +42,7 @@ u16 get_mask( u8 start_bit , u8 end_bit ) {
 u16 drp_write (u16 value, u8 attr_name, u8 lane_num) {
 	u16 curr_value = xaxi_eyescan_read_channel_drp( lane_num , drp_addr[attr_name] );
 	//printf( "drp_write value before 0x%x 0x%x\n" , value , curr_value );
-	value = ((curr_value & drp_mask[attr_name]) | (value << drp_start_bit[attr_name]));
+	value = ( ( curr_value & drp_mask[attr_name] ) | ( ( value << drp_start_bit[attr_name] ) & 0xFFFF ) );
 	//printf( "drp_write value after 0x%x\n" , value );
     xaxi_eyescan_write_channel_drp(lane_num, drp_addr[attr_name], value);
     u16 new_value = (u16) xaxi_eyescan_read_channel_drp(lane_num, drp_addr[attr_name]);
@@ -71,10 +71,14 @@ u16 drp_read  (u8 attr_name, u8 lane_num){
 }
 
 u16 drp_write_raw( u16 value , u16 drp_address , u8 start_bit , u8 end_bit , u8 lane_num ) {
+    if( start_bit > end_bit ) {
+        printf( "You really don't want to do this, start_bit should be less than end_bit!!!!\n" );
+        exit(1);
+    }
     u16 mask = get_mask( start_bit , end_bit );
     u16 curr_value = xaxi_eyescan_read_channel_drp( lane_num , drp_address );
     //printf( "drp_write value before 0x%x 0x%x\n" , value , curr_value );
-    value = ((curr_value & mask) | (value << start_bit));
+    value = ( ( curr_value & mask) | ( ( value << start_bit ) & 0xFFFF ) );
     //printf( "drp_write value after 0x%x\n" , value );
     xaxi_eyescan_write_channel_drp(lane_num, drp_address, value);
     u16 new_value = (u16) xaxi_eyescan_read_channel_drp(lane_num, drp_address);
