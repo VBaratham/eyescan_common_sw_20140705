@@ -25,8 +25,8 @@
 #include "safe_printf.h"
 
 #define MODIFY_DRP_REGISTERS TRUE
-// #define FREQUENCY 125
-#define FREQUENCY 625
+#define FREQUENCY 125
+// #define FREQUENCY 625
 #define DEBUG FALSE
 
 sem_t eyescan_sem[4];
@@ -246,7 +246,10 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
 	xil_printf("Channel %d: Reset register(init): %08x\n",curr_lane,read1);
 #endif
 
-    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 1);
+	if( curr_lane == 7 )
+		xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 0x4001);
+	else
+		xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 1);
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 1);
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0F00);
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
