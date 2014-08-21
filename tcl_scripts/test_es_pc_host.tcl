@@ -36,10 +36,10 @@ proc run_test {} {
 
         # rate: Set depending on full, half, quarter, octal, or hex modes (see user guide)
         #full=32,half=64,qrtr=128,octal=256,hex=512
-        set rate($i) 32
+        #set rate($i) 32
         #set rate($i) 64
         #set rate($i) 128
-        #set rate($i) 256
+        set rate($i) 256
         #set rate($i) 512
         
         # out_file: Set to desired raw output file name.
