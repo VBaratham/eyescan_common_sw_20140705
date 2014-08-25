@@ -13,13 +13,13 @@
 #include "lwip/sys.h"
 #include "lwipopts.h"
 
-#ifdef IS_OTC_BOARD
-#include "otcLib/uPod.h"
-#endif
-
 #include "safe_printf.h"
 #include "es_controller.h"
 #include "SysStatus.h"
+
+#ifdef IS_OTC_BOARD
+#include "otcLib/uPod.h"
+#endif
 
 #define NTELNETCOMMANDS 15
 #define NTELNETTOKENS 20
