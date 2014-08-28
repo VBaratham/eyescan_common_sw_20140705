@@ -88,15 +88,19 @@ int configure_eye_scan(eye_scan* p_lane, u8 curr_lane) {
     p_lane->lane_number = curr_lane;
     //p_lane->lane_name[0] = lane_name;
 
+    if( DEBUG ) xil_printf( "set cursor\n");
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_CURSOR, 0x0703);
     //xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_CURSOR, 0x8703);
 
+    if( DEBUG ) xil_printf( "eyescan enable\n");
     //Write ES_ERRDET_EN, ES_EYESCAN_EN attributes to enable eye scan
     drp_write(0x1, ES_EYESCAN_EN, curr_lane );
     drp_write(0x1, ES_ERRDET_EN, curr_lane );
 
+    if( DEBUG ) xil_printf( "align word\n");
     drp_write(0x1, ALIGN_COMMA_WORD, curr_lane);
     
+    if( DEBUG ) xil_printf( "fix sdata mask\n");
     //Write ES_SDATA_MASK0-1 attribute based on parallel data width
     switch (p_lane->data_width)
         {
@@ -156,6 +160,7 @@ int configure_eye_scan(eye_scan* p_lane, u8 curr_lane) {
             drp_write(0xFFFF, i, curr_lane);
     }
 
+    if( DEBUG ) xil_printf( "fix prescale\n");
     //Write ES_PRESCALE attribute to 0
     drp_write(0x0000, ES_PRESCALE, curr_lane);
 
@@ -223,33 +228,32 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
 	  return FALSE;
 	}
 
+	if( DEBUG ) xil_printf( "starting init_eye_scan\n");
+
 	configure_eye_scan( p_lane , curr_lane );
 
 	/* And then decide whether or not to enable eyescan circuitry port. */
 
+	if( DEBUG ) xil_printf( "enable eyescan circuitry\n");
 	u16 esval = 0x2070; // Enable the eyescan circuity.
 	drp_write(esval , PMA_RSV2 , curr_lane );
 	u16 valrsv2 = drp_read( PMA_RSV2 , curr_lane );
-#if DEBUG
-	xil_printf("PMA_RSV2 = 0x%04x\n",valrsv2);
-#endif
+	if( DEBUG ) xil_printf("PMA_RSV2 = 0x%04x\n",valrsv2);
 	if( esval != valrsv2 )
 		xil_printf("ERROR: Failed to write PMA_RSV2 with expected value\n");
 
 #if DEBUG
-	monreg = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_MONITOR);
+	u32 monreg = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_MONITOR);
 	xil_printf("Channel %d: Monitor register: %08lx\n",curr_lane,monreg);
-	errcnt = monreg & 0x80FF;
+	u32 errcnt = monreg & 0x80FF;
 	xil_printf("Channel %d: Error Count: %08lx\n",curr_lane,errcnt);
 
 	u32 read1 = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_RESET);
 	xil_printf("Channel %d: Reset register(init): %08x\n",curr_lane,read1);
 #endif
 
-	if( curr_lane == 7 )
-		xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 0x4001);
-	else
-		xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 1);
+	if( DEBUG ) xil_printf( "do resets\n");
+	xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 1);
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 1);
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0F00);
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
@@ -268,13 +272,14 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
     u32 rxuserready = xaxi_eyescan_read_channel_reg( curr_lane , XAXI_EYESCAN_RXCFG );
     xil_printf( "txuserready 0x%08x, rxuserready 0x%08x\n" , txuserready , rxuserready );
 
-    u32 monreg = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_MONITOR);
+    monreg = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_MONITOR);
     xil_printf("Channel %d: Monitor register: %08lx\n",curr_lane,monreg);
-    u32 errcnt = monreg & 0x80FF;
+    errcnt = monreg & 0x80FF;
     xil_printf("Channel %d: Error Count: %08lx\n",curr_lane,errcnt);
 #endif
 
 	sleep(200);
+	if( DEBUG ) xil_printf( "leaving init_eye_scan\n");
 
 	return TRUE;
 }
@@ -293,6 +298,7 @@ void *es_controller_thread(char * arg)
 	u32 n_quad = n_gtx >> 16;
 	n_gtx &= 0x00FF;
 	xil_printf( "n_gtx %d\n" , n_gtx );
+	xil_printf( "n_quad %d\n" , n_quad );
     //Eye scan data structure
 	u32 num_lanes = n_gtx;
     u8 curr_lane;
@@ -302,6 +308,8 @@ void *es_controller_thread(char * arg)
         memset( eye_scan_lanes[curr_lane] , 0 , sizeof(eye_scan) );
     	init_eye_scan_struct( eye_scan_lanes[curr_lane] );
     }
+
+    if( DEBUG ) xil_printf( "memory initialized\n");
 
     //Main Loop
     while (1)
