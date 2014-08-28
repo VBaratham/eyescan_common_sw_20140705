@@ -27,15 +27,19 @@
 #include "es_simple_eye_acq.h"
 #include "xaxi_eyescan.h"
 
+#define DEBUG FALSE
+
 void es_simple_eye_acq(eye_scan *eye_struct)
 {
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Does nothing but return.
 	//%%%%%%%%%%%%%%%%%%  WAIT State (es_simple_eye_acq)  %%%%%%%%%%%%%%%%%%% Waits for RESET state
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% to be written externally.
 	if(eye_struct->state == WAIT_STATE || eye_struct->state == DONE_STATE) { //(WAIT x0000 = 0, DONE = 1)
-		//printf( "did we get here?\n" );
+		if( DEBUG ) printf( "did we get here?\n" );
 		return;
 	}
+
+	if( DEBUG ) printf( "start es_simple_eye_acq\n");
 
 	u16 vert_step_size = eye_struct->vert_step_size;
 	u16 max_vert_offset = 0;
@@ -70,14 +74,12 @@ void es_simple_eye_acq(eye_scan *eye_struct)
 	max_vert_offset -= vert_step_size;
 
 	//Read DONE bit & state of Eye Scan State Machine
-	//printf( "es_simple_eye_acq read es_control_status lane %d\n" , eye_struct->lane_number );
+	if( DEBUG ) printf( "es_simple_eye_acq read es_control_status lane %d\n" , eye_struct->lane_number );
 	es_status = drp_read(ES_CONTROL_STATUS, eye_struct->lane_number);
-	//printf( "lane %d es_status bit 0x%x\n" , eye_struct->lane_number , es_status );
-	//state = es_control_status[3:1]
+	if( DEBUG ) printf( "lane %d es_status bit 0x%x\n" , eye_struct->lane_number , es_status );
 	es_state = es_status >> 1;
-	//DONE = es_control_status[0]
 	es_done = es_status & 1;
-	//printf( "es_state 0x%x es_done 0x%x\n" , es_state , es_done );
+	if( DEBUG ) printf( "es_state 0x%x es_done 0x%x\n" , es_state , es_done );
 
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initializes parameters for
 	//%%%%%%%%%%%%%%%%%%  RESET State (es_simple_eye_acq)  %%%%%%%%%%%%%%%%%% statistical eye scan
@@ -189,7 +191,7 @@ void es_simple_eye_acq(eye_scan *eye_struct)
 		sample_count = drp_read(ES_SAMPLE_COUNT, eye_struct->lane_number);
 		prescale = drp_read(ES_PRESCALE, eye_struct->lane_number);
 		center_error = xaxi_eyescan_read_channel_reg(eye_struct->lane_number,XAXI_EYESCAN_MONITOR) & 0x80FF;
-		//printf( "current prescale read from drp %d\n" , prescale );
+		if( DEBUG ) printf( "current prescale read from drp %d\n" , prescale );
 		if(error_count < (10*min_error_count) || error_count > (1000*min_error_count)){
 			if (prescale < max_prescale && error_count < 10*min_error_count){
 				next_prescale = prescale+step_prescale;
@@ -220,7 +222,7 @@ void es_simple_eye_acq(eye_scan *eye_struct)
 			}
 			drp_write(next_prescale,ES_PRESCALE, eye_struct->lane_number);
 		}
-		//printf( "lane %d pixel_count %d error_count %d sample_count %d prescale %d\n" , eye_struct->lane_number , eye_struct->pixel_count , error_count , sample_count , prescale );
+		if( DEBUG ) printf( "lane %d pixel_count %d error_count %d sample_count %d prescale %d\n" , eye_struct->lane_number , eye_struct->pixel_count , error_count , sample_count , prescale );
 		eye_struct->prescale = prescale;
 
 		// Store information about current pixel
@@ -233,9 +235,9 @@ void es_simple_eye_acq(eye_scan *eye_struct)
 		current_pixel->ut_sign = eye_struct->ut_sign;
 		current_pixel->prescale = eye_struct->prescale;
 		eye_struct->pixel_count++;
-		//if( eye_struct->pixel_count % 10 == 0 ) {
-			//printf( "lane %d at pixel %d\n" , eye_struct->lane_number , eye_struct->pixel_count );
-		//}
+		if( eye_struct->pixel_count % 10 == 0 ) {
+			if( DEBUG ) printf( "lane %d at pixel %d\n" , eye_struct->lane_number , eye_struct->pixel_count );
+		}
 
 		//Transition to SETUP state
 		eye_struct->state = SETUP_STATE;
