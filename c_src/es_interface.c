@@ -21,6 +21,8 @@
 #include "otcLib/uPod.h"
 #endif
 
+#include "mfs_config.h"
+
 #define NTELNETCOMMANDS 15
 #define NTELNETTOKENS 20
 #define RECV_BUF_SIZE 2048
@@ -43,7 +45,9 @@ int es_interface(int s, const void *data, size_t size) {
 	memset( input_buf , 0 , RECV_BUF_SIZE+1 );
 	strncpy( input_buf , data , size );
 
-	char *commands[NTELNETCOMMANDS] = { "esinit" , "esread" , "esdone" , "esdisable" , "mwr" , "mrd" , "debug" , "dbgeyescan" , "initclk" , "readclk" , "printupod" , "iicr" , "iicw" , "printtemp" , "globalinit" };
+	char *commands[NTELNETCOMMANDS] = { "esinit" , "esread" , "esdone" , "esdisable" , "mwr" , "mrd" , "debug" , \
+			"dbgeyescan" , "initclk" , "readclk" , "printupod" , "iicr" , "iicw" , "printtemp" , "globalinit"
+	};
 
 	if( !strncmp( input_buf , "h" , 1 ) || !strncmp( input_buf , "H" , 1 ) ) {
 		memset( input_buf , 0 , RECV_BUF_SIZE+1 );
@@ -56,7 +60,9 @@ int es_interface(int s, const void *data, size_t size) {
 	}
 
 	char * temp_str , ** pEnd = NULL;
-	typedef enum { ESINIT = 0 , ESREAD = 1 , ESDONE = 2 , ESDISABLE = 3 , MWR = 4 , MRD = 5 , DEBUG = 6 , DBGEYESCAN = 7 , INITCLK = 8 , READCLK = 9 , PRINTUPOD = 10 , IICR = 11 , IICW = 12 , PRINTTEMP = 13 , GLOBALINIT = 14  } command_type_t;
+	typedef enum { ESINIT = 0 , ESREAD = 1 , ESDONE = 2 , ESDISABLE = 3 , MWR = 4 , MRD = 5 , DEBUG = 6 , \
+		DBGEYESCAN = 7 , INITCLK = 8 , READCLK = 9 , PRINTUPOD = 10 , IICR = 11 , IICW = 12 , PRINTTEMP = 13 , GLOBALINIT = 14
+	} command_type_t;
 	command_type_t command_type = MWR;
 
     char tokens[NTELNETTOKENS][20] = {};
@@ -141,14 +147,19 @@ int es_interface(int s, const void *data, size_t size) {
             }
             
             for( idx = begin_pixel ; idx <= end_pixel ; idx++ ) {
-                memset( input_buf , 0 , RECV_BUF_SIZE+1 );
                 eye_scan_pixel * current_pixel = ( curr_eyescan->pixels + idx );
                 safe_sprintf( input_buf , "%s%d %d %d: %d %d %d %d %ld\r\n" , input_buf, \
                 		idx ,  \
                     current_pixel->h_offset , current_pixel->v_offset , \
                     current_pixel->error_count , current_pixel->sample_count , \
                     current_pixel->prescale & 0x001F , current_pixel->ut_sign , current_pixel->center_error );
-                retval = safe_send(s, input_buf);
+                if( strlen(input_buf) > 1900 ) {
+                	retval = safe_send(s, input_buf);
+                	memset( input_buf , 0 , RECV_BUF_SIZE+1 );
+                }
+            }
+            if( strlen(input_buf) > 0 ) {
+            	retval = safe_send(s, input_buf);
             }
             return retval;
         }
