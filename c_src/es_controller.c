@@ -24,10 +24,11 @@
 #include <semaphore.h>
 #include "safe_printf.h"
 
-#define MODIFY_DRP_REGISTERS TRUE
+#define MODIFY_DRP_REGISTERS FALSE
 #define FREQUENCY 125
 // #define FREQUENCY 625
 #define DEBUG FALSE
+#define RUN_ES_ACQUISITION TRUE
 
 sem_t eyescan_sem[4];
 
@@ -288,14 +289,13 @@ void global_reset_eye_scan() {
     xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,0x2);
 }
 
-void *es_controller_thread(char * arg)
-{
+void *es_controller_thread(char * arg) {
 	xil_printf( "starting es_controller_thread\n");
 
     // Global initialization:
 	global_reset_eye_scan();
 	u32 n_gtx = xaxi_eyescan_read_global(XAXI_EYESCAN_NGTX);
-	u32 n_quad = n_gtx >> 16;
+	u32 n_quad = n_gtx >> 8;
 	n_gtx &= 0x00FF;
 	xil_printf( "n_gtx %d\n" , n_gtx );
 	xil_printf( "n_quad %d\n" , n_quad );
@@ -312,8 +312,7 @@ void *es_controller_thread(char * arg)
     if( DEBUG ) xil_printf( "memory initialized\n");
 
     //Main Loop
-    while (1)
-    {
+    while (1) {
     	for(curr_lane=0; curr_lane<num_lanes ;curr_lane++){
     		//Start a new scan if it's not currently running
     		if(eye_scan_lanes[curr_lane]->initialized == FALSE) {
@@ -321,11 +320,11 @@ void *es_controller_thread(char * arg)
     			continue;
     		}
 
-    		es_simple_eye_acq(eye_scan_lanes[curr_lane]);
+    		if( RUN_ES_ACQUISITION ) es_simple_eye_acq(eye_scan_lanes[curr_lane]);
 
     		if( eye_scan_lanes[curr_lane]->state == DONE_STATE && eye_scan_lanes[curr_lane]->p_upload_rdy == 0 ) {
     			xil_printf( "scan done lane %d\n" , curr_lane );
-    			eye_scan_lanes[curr_lane]->p_upload_rdy = 1;
+    			if( RUN_ES_ACQUISITION ) eye_scan_lanes[curr_lane]->p_upload_rdy = 1;
     		}
     	}
     }
@@ -341,6 +340,25 @@ void eyescan_global_debug( char * dbgstr ) {
 	safe_sprintf( dbgstr , "%sqpll_lock    0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_QPLL_LOCK) );
 	safe_sprintf( dbgstr , "%sqpll_lost    0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_QPLL_LOST) );
 	safe_sprintf( dbgstr , "%sglobal_reset 0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_GLOBAL_RESET) );
+
+	if( DEBUG ) xil_printf( "got here %s\n",dbgstr);
+
+    /* Check the frequency counting logic on channel 0 only, but in the global space. */
+  u32 grd = xaxi_eyescan_read_global(XAXI_EYESCAN_GLOBAL_RESET);
+  xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,grd | 0x200);  // Clear it
+  xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,grd | 0x100);  // Enable it (and remove the clear)
+  sleep(100);   // Probably long enough to halt with max count
+#ifdef XAXI_EYESCAN_BASEFREQ_COUNT
+  xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,grd);  // Disable it (w/out clearing it)
+  safe_sprintf( dbgstr , "%sXAXI_EYESCAN_BASEFREQ_COUNT 0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_BASEFREQ_COUNT) );
+  safe_sprintf( dbgstr , "%sXAXI_EYESCAN_FREQ0_COUNT    0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_FREQ0_COUNT) );
+  safe_sprintf( dbgstr , "%sXAXI_EYESCAN_FREQ1_COUNT    0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_FREQ1_COUNT) );
+  safe_sprintf( dbgstr , "%sXAXI_EYESCAN_FREQ2_COUNT    0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_FREQ2_COUNT) );
+  safe_sprintf( dbgstr , "%sXAXI_EYESCAN_FREQ3_COUNT    0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_FREQ3_COUNT) );
+#endif
+  xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,grd | 0x100);  // Enable it (and remove the clear)
+
+  if( DEBUG ) xil_printf( "and here %s\n",dbgstr);
 
 	return;
 }
@@ -376,21 +394,6 @@ void eyescan_debugging( int lane , char * dbgstr ) {
 	safe_sprintf( dbgstr , "%ses_qual_mask3     0x%04x\r\n" , dbgstr , drp_read( ES_QUAL_MASK3 , lane ) );
 	safe_sprintf( dbgstr , "%ses_qual_mask4     0x%04x\r\n" , dbgstr , drp_read( ES_QUAL_MASK4 , lane ) );
 	safe_sprintf( dbgstr , "%spma_rsv2          0x%04x\r\n" , dbgstr , drp_read( PMA_RSV2 , lane ) );
-
-      /* Check the frequency counting logic on channel 0 only, but in the global space. */
-    u32 grd = xaxi_eyescan_read_global(XAXI_EYESCAN_GLOBAL_RESET);
-    xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,grd | 0x200);  // Clear it
-    xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,grd | 0x100);  // Enable it (and remove the clear)
-    sleep(100);   // Probably long enough to halt with max count
-#ifdef XAXI_EYESCAN_BASEFREQ_COUNT
-    xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,grd);  // Disable it (w/out clearing it)
-    safe_sprintf( dbgstr , "%sXAXI_EYESCAN_BASEFREQ_COUNT 0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_BASEFREQ_COUNT) );
-    safe_sprintf( dbgstr , "%sXAXI_EYESCAN_FREQ0_COUNT    0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_FREQ0_COUNT) );
-    safe_sprintf( dbgstr , "%sXAXI_EYESCAN_FREQ1_COUNT    0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_FREQ1_COUNT) );
-    safe_sprintf( dbgstr , "%sXAXI_EYESCAN_FREQ2_COUNT    0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_FREQ2_COUNT) );
-    safe_sprintf( dbgstr , "%sXAXI_EYESCAN_FREQ3_COUNT    0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_FREQ3_COUNT) );
-#endif
-    xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,grd | 0x100);  // Enable it (and remove the clear)
     
 	return;
 }
