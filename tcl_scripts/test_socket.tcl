@@ -1,4 +1,13 @@
-for { set N 0 } { $N < 8 } { incr N } {
+set chan [socket 192.168.1.99 7]
+puts $chan "dbgeyescan"
+flush $chan
+set number [gets $chan]
+puts $number
+close $chan
+
+gets stdin
+
+for { set N 0 } { $N < 16 } { incr N } {
 set chan [socket 192.168.1.99 7]
 puts $chan "dbgeyescan $N"
 flush $chan
