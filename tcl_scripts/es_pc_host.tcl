@@ -122,7 +122,7 @@ proc es_host_check_range {test_ch_a horz_step_a vert_step_a lpm_mode_a rate_a ma
     set valid_widths {16 20 32 40}
     
     foreach curr_ch [array names test_ch] {
-        if { $curr_ch > 8 || $curr_ch < 0 } {
+        if { $curr_ch > 48 || $curr_ch < 0 } {
             puts "ERROR. test_ch array key/name (channel name) must be 0,1,2,or 3 (Value given $curr_ch)"
             return 0
         }
