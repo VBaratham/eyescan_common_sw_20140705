@@ -479,7 +479,7 @@ int es_interface(int s, const void *data, size_t size) {
                     mondata->tempWhole, mondata->tempFrac, \
                     100*mondata->v33, 100*mondata->v25);
             free(mondata);
-            retval = lwip_send(s, input_buf, strlen(input_buf), 0);
+            retval = safe_send(s, input_buf);
         }
 #endif
         return retval;
