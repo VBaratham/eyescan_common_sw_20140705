@@ -204,23 +204,12 @@ proc es_host_run {test_ch_a horz_step_a vert_step_a lpm_mode_a rate_a max_presca
     foreach curr_ch [array names test_ch] {
         if {$test_ch($curr_ch) == 1} {
             puts "Writing settings to channel $curr_ch ..."
-            
-            set test_done($curr_ch) 0
 
             esinit "$curr_ch $max_prescale($curr_ch) $horz_step($curr_ch) $data_width($curr_ch) $vert_step($curr_ch) $lpm_mode($curr_ch) $rate($curr_ch)"
-
-            # Write settings into output file; Overwrite if exists
-            set dumpfile [open $out_file($curr_ch) w]
-            puts $dumpfile "# Horz_step: $horz_step($curr_ch)"
-            puts $dumpfile "# Vert_step: $vert_step($curr_ch)"
-            puts $dumpfile "# LPM_mode: $lpm_mode($curr_ch)"
-            puts $dumpfile "# Rate: $rate($curr_ch)"
-            close $dumpfile
-
-        } else {
-            set test_done($curr_ch) 1
         }
     }
+    
+    esinit "run"
     
     set wait_time 10000
     
@@ -228,78 +217,57 @@ proc es_host_run {test_ch_a horz_step_a vert_step_a lpm_mode_a rate_a max_presca
         # Poll status for each channel
         puts "Sleeping for $wait_time ms"
         after $wait_time
-        # set increase_wait 1
-        # Everyting involving increase_wait is gone now that we're waiting for the whole thing to finish at once
-#         stop
-        
-        foreach curr_ch [array names test_ch] {
-            if {$test_done($curr_ch) == 0} {
-#                 set curr_status_str [es_host_read_mb $LANE_OFFSET($curr_ch) $UPLOAD_RDY_OFFSET 1]
-                set curr_status_str [esdone $curr_ch]
-                if { $curr_ch == 0 } {
-                	set npixels [esread $curr_ch]
-                	puts "Finished $npixels pixels"
-            	}
-                set curr_status [lindex [split $curr_status_str ": "] end]
-                    #TODO: Prev lines must read the "status" field of the current lane's eyescan struct and check if it's -1 (DONE state)
-                if {$curr_status == 1} {
-                    puts "Channel $curr_ch: Uploading data"
-                    # Append data to previously created file
-                    set dumpfile [open $out_file($curr_ch) a]
-#                     set es_data [es_host_read_mb $LANE_OFFSET($curr_ch) $ES_DATA_OFFSET $NUM_PIXELS]
-                    set npixels [esread $curr_ch]
-                    puts "number of pixels: $npixels"
-                    
-                    set ip_address 192.168.1.99
-                    set ip_port 7
-                    set chan [socket $ip_address $ip_port]
-                    puts $chan "esread $curr_ch $npixels"
-                    for { set pixel_idx 0 } { $pixel_idx < $npixels } { incr pixel_idx } {
-                        #set es_data [esread "$curr_ch $pixel_idx"]
-                        flush $chan
-                        set es_data [gets $chan]
-                        puts $dumpfile $es_data
-                    }
-                    close $chan
-                    close $dumpfile
-		    puts "SCAN IS DONE"
-		    # Test is done
-		    set test_done($curr_ch) 1
-		    # Reset FPGA start bit
-		    #es_host_write_mb $LANE_OFFSET($curr_ch) $TEST_ENABLE_OFFSET 0
-		    esdisable $curr_ch
-		    #TODO: Make this write to eyescan struct "enable" field
 
-                    # Reset status bit
-                    # es_host_write_mb $LANE_OFFSET($curr_ch) $UPLOAD_RDY_OFFSET 0
-                    
-                    # # Don't increase wait time if were able to upload from any channel
-                    # set increase_wait 0
-                # } else {
-                    # # set wait_time [expr $wait_time + 50]
-                    # set ch_running [expr $ch_running + 1]
+        set isalldone [esdone "all"]
+        if { $isalldone == 0 } {
+            set npixels [esread "0"]
+            puts "Finished $npixels pixels"
+            continue;
+        }
+
+        if {$isalldone == 1} {
+            set dumpfile [ open "all.dump" w ]
+            set ip_address 192.168.1.99
+            set ip_port 7
+            set chan [socket $ip_address $ip_port]
+            puts $chan "esread all"
+            while {1} {
+                flush $chan
+                set es_data [gets $chan]
+                if { [ eof $chan ] } {
+                    close $chan
+                    break
                 }
+                puts $dumpfile $es_data
             }
-        }
-#         con
-        
-        # if {$increase_wait == 1} {
-        #     # If all channels were not ready to upload, increase wait time
-        #     set wait_time [expr $wait_time + 50]
-        # }
-        
-        set all_ch_done 1
-        foreach curr_ch [array names test_ch] {
-            if {$test_done($curr_ch) == 0} {
-                set all_ch_done 0
-            }
-        }
-        if {$all_ch_done == 1} {
+            close $dumpfile
+            puts "SCAN IS DONE"
+            esdisable "all"
             break;
         }
-        
     }
-    
+
+#     foreach curr_ch [array names test_ch] {
+#         puts "Channel $curr_ch: Parsing data"
+#         # Append data to previously created file
+#         set dumpfile [open $out_file($curr_ch) a]
+#         set infile [ open "all.dump" r ]
+#         while {1} {
+#             set line [ gets $infile ]
+#             set fields [split $line " "]
+#             set curr_channel [ lindex $fields 0 ]
+#             if { $curr_channel == $curr_ch } {
+#                 puts $dumpfile $line
+#             }
+#             if { [ eof $infile ] } {
+#                 close $infile
+#                 break
+#             }
+#         }
+#         close $dumpfile
+#     }
+
+#     file delete "all.dump"
     puts "ALL TEST COMPLETED!"
     return 1
 
@@ -333,13 +301,6 @@ proc es_host_process_dump {in_file curr_ch horz_arr_a vert_arr_a utsign_arr_a sa
     upvar $prescale_arr_a prescale_arr
     
     set f_in [open $in_file r]
-    
-    # Start and end address for eye scan results section in the BRAM for each lane
-    set START_ADDRESS {0x4018 0x4818 0x5018 0x5818}
-    set END_ADDRESS   {0x47FF 0x4FFF 0x57FF 0x5FFF}
-    
-    set start [lindex $START_ADDRESS $curr_ch]
-    set end   [lindex $END_ADDRESS   $curr_ch]
         
     set count 0
     while {[gets $f_in line] >= 0} {
@@ -354,13 +315,17 @@ proc es_host_process_dump {in_file curr_ch horz_arr_a vert_arr_a utsign_arr_a sa
             #set fields [split $line ":"]
             set fields [split $line " "]
             
-            set curr_pixel [ lindex $fields 0 ]
-            set horz_offset [ lindex $fields 1 ]
-            set vert_offset [ lindex $fields 2 ]
-            set error_count [ lindex $fields 3 ]
-            set sample_count [ lindex $fields 4 ]
-            set prescale [ lindex $fields 5 ]
-            set ut_sign [ lindex $fields 6 ]
+            set curr_channel [ lindex $fields 0 ]
+            if { $curr_channel != $curr_ch } {
+                continue;
+            }
+            set curr_pixel [ lindex $fields 1 ]
+            set horz_offset [ lindex $fields 2 ]
+            set vert_offset [ lindex $fields 3 ]
+            set error_count [ lindex $fields 4 ]
+            set sample_count [ lindex $fields 5 ]
+            set prescale [ lindex $fields 6 ]
+            set ut_sign [ lindex $fields 7 ]
             
             # Update stored variables
             set sample_count_arr($horz_offset,$vert_offset,$ut_sign) $sample_count
