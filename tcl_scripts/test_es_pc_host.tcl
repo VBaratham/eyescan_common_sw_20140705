@@ -7,7 +7,7 @@ proc run_test {} {
     #####################
     # set ch_list [list 0 1 2 3 4 5 6 7]
     #set ch_list [list 0]
-    set NUM_CH 16
+    set NUM_CH 48
     array set data_width {}
     for { set i 0 } { $i < $NUM_CH } { incr i } {
     
@@ -70,7 +70,7 @@ proc run_test {} {
                 array set prescale_arr {}
                 
                 # Generate raw dump and ess. Extract data into arrays.
-                es_host_process_dump Ch${i}.dump $i horz_arr vert_arr utsign_arr sample_count_arr error_count_arr prescale_arr $data_width($i)
+                es_host_process_dump all.dump $i horz_arr vert_arr utsign_arr sample_count_arr error_count_arr prescale_arr $data_width($i)
                 
                 # Generate ASCII output
                 puts $f_out "\nCHANNEL $i"
