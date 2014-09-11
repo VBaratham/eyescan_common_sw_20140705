@@ -29,6 +29,8 @@
 #define LPM_MODE 0
 #define DFE_MODE 1
 
+#define MAX_NUMBER_OF_LANES 48
+
 #define NUM_PIXELS_TOTAL 4096 //maximum number of pixels assuming vert/horz step sizes = 1, "hex" rate used (max_horz_offset = in this case)
 
 typedef struct {
@@ -76,6 +78,11 @@ eye_scan * get_eye_scan_lane( int lane );
 int configure_eye_scan(eye_scan* p_lane, u8 lane_offset);
 int init_eye_scan(eye_scan* p_lane, u8 lane_offset);
 void global_reset_eye_scan();
+void global_run_eye_scan();
+u8 global_upload_ready();
+
+void global_stop_eye_scan();
+void global_upload_unrdy();
 
 void eyescan_lock();
 void eyescan_unlock();

@@ -84,6 +84,12 @@ int es_interface(int s, const void *data, size_t size) {
     }
 
     if( command_type == ESINIT ) {
+    	if( number_tokens == 2 ) {
+    		if( !strncmp( "run" , tokens[1] , 3 ) ) {
+    			global_run_eye_scan();
+    			return safe_send( s , "1\r\n" );
+    		}
+    	}
     	if( number_tokens != 8 ) {
     		memset( input_buf , 0 , RECV_BUF_SIZE+1 );
     		safe_sprintf( input_buf , "Syntax: esinit <lane> <max_prescale> <horz_step> <data_width> <vert_step> <lpm_mode> <rate>\r\n");
@@ -123,6 +129,31 @@ int es_interface(int s, const void *data, size_t size) {
     		safe_sprintf( input_buf , "Syntax: esread <lane> <pixel>\r\n");
     		return safe_send( s , input_buf );
     	}
+        if( !strncmp( "all" , tokens[1] , 3 ) ) {
+            if( !global_upload_ready() )
+                return 0;
+            int curr_lane = 0;
+            for( curr_lane = 0 ; curr_lane < MAX_NUMBER_OF_LANES ; curr_lane++ ) {
+                eye_scan * curr_eyescan = get_eye_scan_lane( curr_lane );
+                if( curr_eyescan == NULL || curr_eyescan->enable == FALSE || curr_eyescan->p_upload_rdy == FALSE )
+                    continue;
+                for( idx = 0 ; idx < curr_eyescan->pixel_count ; idx++ ) {
+                    eye_scan_pixel * current_pixel = ( curr_eyescan->pixels + idx );
+                    safe_sprintf( input_buf , "%s%d %d %d %d: %d %d %d %d %ld\r\n" , input_buf, curr_lane , idx , \
+                        current_pixel->h_offset , current_pixel->v_offset , \
+                        current_pixel->error_count , current_pixel->sample_count , \
+                        current_pixel->prescale & 0x001F , current_pixel->ut_sign , current_pixel->center_error );
+                    if( strlen(input_buf) > 1900 ) {
+                        retval = safe_send(s, input_buf);
+                        memset( input_buf , 0 , RECV_BUF_SIZE+1 );
+                    }
+                }
+            }
+            if( strlen(input_buf) > 0 ) {
+                retval = safe_send(s, input_buf);
+            }
+            return retval;
+        }
     	int curr_lane = strtoul( tokens[1] , pEnd , 0 );
     	eye_scan * curr_eyescan = get_eye_scan_lane( curr_lane );
     	if( curr_eyescan == NULL ) {
@@ -130,7 +161,8 @@ int es_interface(int s, const void *data, size_t size) {
     	}
     	if( number_tokens == 2 ) {
     		safe_sprintf( input_buf , "%d\r\n" , curr_eyescan->pixel_count );
-    		return safe_send(s, input_buf);
+            retval = safe_send(s, input_buf);
+    		return retval;
     	}
     	else {
 			int curr_pixel = strtoul( tokens[2] , pEnd , 0 );
@@ -148,8 +180,7 @@ int es_interface(int s, const void *data, size_t size) {
             
             for( idx = begin_pixel ; idx <= end_pixel ; idx++ ) {
                 eye_scan_pixel * current_pixel = ( curr_eyescan->pixels + idx );
-                safe_sprintf( input_buf , "%s%d %d %d: %d %d %d %d %ld\r\n" , input_buf, \
-                		idx ,  \
+                safe_sprintf( input_buf , "%s%d %d %d %d: %d %d %d %d %ld\r\n" , input_buf, curr_lane , idx , \
                     current_pixel->h_offset , current_pixel->v_offset , \
                     current_pixel->error_count , current_pixel->sample_count , \
                     current_pixel->prescale & 0x001F , current_pixel->ut_sign , current_pixel->center_error );
@@ -171,6 +202,12 @@ int es_interface(int s, const void *data, size_t size) {
     		safe_sprintf( input_buf , "Syntax: esdone <lane> \r\n");
     		return safe_send( s , input_buf );
     	}
+    	if( !strncmp( "all" , tokens[1] , 3 ) ) {
+    		memset( input_buf , 0 , RECV_BUF_SIZE+1 );
+    		safe_sprintf( input_buf , "%d\r\n" , global_upload_ready() );
+    		return safe_send(s, input_buf);
+    	}
+
     	int curr_lane = strtoul( tokens[1] , pEnd , 0);
     	int is_ready = FALSE;
     	eye_scan * curr_eyescan = get_eye_scan_lane( curr_lane );
@@ -190,6 +227,11 @@ int es_interface(int s, const void *data, size_t size) {
     		safe_sprintf( input_buf , "Syntax: esdisable <lane> \r\n");
     		return safe_send( s , input_buf );
     	}
+        if( !strncmp( "all" , tokens[1] , 3 ) ) {
+            global_stop_eye_scan();
+            global_upload_unrdy();
+            return 0;
+        }
     	int curr_lane = strtoul( tokens[1] , pEnd , 0);
     	eye_scan * curr_eyescan = get_eye_scan_lane( curr_lane );
     	curr_eyescan->enable = FALSE;

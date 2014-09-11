@@ -24,13 +24,15 @@
 #include <semaphore.h>
 #include "safe_printf.h"
 
+#define MODIFY_CURSOR FALSE
 #define MODIFY_DRP_REGISTERS FALSE
-#define FREQUENCY 125
+// #define FREQUENCY 125
 // #define FREQUENCY 625
+#define FREQUENCY 640
 #define DEBUG FALSE
 #define RUN_ES_ACQUISITION TRUE
 
-sem_t eyescan_sem[4];
+sem_t eyescan_sem;
 
 void eyescan_lock() {
 	if( sem_wait( &eyescan_sem ) == -1 ) {
@@ -43,9 +45,16 @@ void eyescan_unlock() {
 	sem_post( &eyescan_sem );
 }
 
-#define MAX_NUMBER_OF_LANES 48
-
 eye_scan * eye_scan_lanes[MAX_NUMBER_OF_LANES];
+
+u8 do_global_run_eyescan = FALSE;
+u8 is_global_upload_ready = FALSE;
+
+void global_run_eye_scan() { do_global_run_eyescan = TRUE; }
+void global_stop_eye_scan() { do_global_run_eyescan = FALSE; }
+
+u8 global_upload_ready() { return is_global_upload_ready; }
+void global_upload_unrdy() { is_global_upload_ready = FALSE; }
 
 eye_scan * get_eye_scan_lane( int lane ) {
 	if( lane > MAX_NUMBER_OF_LANES )
@@ -90,8 +99,10 @@ int configure_eye_scan(eye_scan* p_lane, u8 curr_lane) {
     //p_lane->lane_name[0] = lane_name;
 
     if( DEBUG ) xil_printf( "set cursor\n");
-    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_CURSOR, 0x0703);
-    //xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_CURSOR, 0x8703);
+    // if( MODIFY_CURSOR ) xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_CURSOR, 0x0703);
+    // if( MODIFY_CURSOR ) xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_CURSOR, 0x8703);
+    if( MODIFY_CURSOR ) xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_CURSOR, 0x3067);
+    // if( MODIFY_CURSOR ) xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_CURSOR, 0xb067);
 
     if( DEBUG ) xil_printf( "eyescan enable\n");
     //Write ES_ERRDET_EN, ES_EYESCAN_EN attributes to enable eye scan
@@ -210,10 +221,13 @@ int configure_eye_scan(eye_scan* p_lane, u8 curr_lane) {
 #if FREQUENCY == 125
     drp_write_raw( 0x4 , 0x11 , 1 , 3 , curr_lane ); // RX_CM_TRIM
     drp_write_raw( 0x4008 , 0x0a9 , 0 , 15 , curr_lane ); // RXCDR_CFG
-#else if FREQUENCY == 625
+#elif FREQUENCY == 625
     drp_write_raw( 0x1020 , 0x0a9 , 0 , 15 , curr_lane ); // RXCDR_CFG
+#elif FREQUENCY == 640
+    drp_write_raw( 0x4 , 0x11 , 1 , 3 , curr_lane ); // RX_CM_TRIM
+    drp_write_raw( 0xb , 0xac , 0 , 15 , curr_lane ); // RXCDR_CFG
 #endif
-    drp_write_raw( 0x8000 , 0x0ab , 0 , 15 , curr_lane ); // RXCDR_CFG
+//     drp_write_raw( 0x8000 , 0x0ab , 0 , 15 , curr_lane ); // RXCDR_CFG
 #endif
 
     return TRUE;
@@ -301,7 +315,7 @@ void *es_controller_thread(char * arg) {
 	xil_printf( "n_quad %d\n" , n_quad );
     //Eye scan data structure
 	u32 num_lanes = n_gtx;
-    u8 curr_lane;
+    u8 curr_lane , is_all_ready;
 
     for( curr_lane=0; curr_lane<num_lanes; curr_lane++ ) {
     	eye_scan_lanes[curr_lane] = malloc( sizeof(eye_scan) );
@@ -310,6 +324,9 @@ void *es_controller_thread(char * arg) {
     }
 
     if( DEBUG ) xil_printf( "memory initialized\n");
+
+    while( do_global_run_eyescan == FALSE )
+    	continue;
 
     //Main Loop
     while (1) {
@@ -327,6 +344,12 @@ void *es_controller_thread(char * arg) {
     			if( RUN_ES_ACQUISITION ) eye_scan_lanes[curr_lane]->p_upload_rdy = 1;
     		}
     	}
+    	is_all_ready = TRUE;
+    	for( curr_lane = 0 ; curr_lane < num_lanes ; curr_lane++ ) {
+    		if( eye_scan_lanes[curr_lane]->enable == TRUE && eye_scan_lanes[curr_lane]->initialized == TRUE && eye_scan_lanes[curr_lane]->p_upload_rdy == FALSE )
+    			is_all_ready = FALSE;
+    	}
+    	is_global_upload_ready = is_all_ready;
     }
     free(eye_scan_lanes);
 }
