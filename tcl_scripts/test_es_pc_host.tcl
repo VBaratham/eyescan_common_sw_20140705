@@ -1,6 +1,8 @@
 source es_pc_host.tcl
 
-proc run_test {} {
+proc run_test {horz_step_a vert_step_a max_prescale_a data_width_a lpm_mode_a rate_a} {
+    
+    puts "$horz_step_a $vert_step_a $max_prescale_a $data_width_a $lpm_mode_a $rate_a"
     
     #####################
     # Set test parameters
@@ -15,28 +17,28 @@ proc run_test {} {
         set test_ch($i) 1
         
         # horz_step: Horizontal sweep step size. Min value is 1. Max value depends on data rate mode (see user guide & rate variable below)
-        set horz_step($i) 1
+        set horz_step($i) $horz_step_a
         #set horz_step($i) 8
         # set horz_step($i) 255
         
         # vert_step: Vertical sweep step size. Min value is 1. Max value is 127.
-        set vert_step($i) 8
+        #set vert_step($i) 8
         # use this setting to generate 1-d bathtub plots
-        #set vert_step($i) 127
+        set vert_step($i) $vert_step_a
         
         # max_prescale: Maximum prescale value for sample count. Min value is 0. Max value is 31.
-        set max_prescale($i) 8
+        set max_prescale($i) $max_prescale_a
         
         # data_width: Parallel data width interface. Valid values are 16, 20, 32, 40.
         #set data_width($i) 20
-        set data_width($i) 40
+        set data_width($i) $data_width_a
 
         # lpm_mode: Set to 1 for LPM mode. Set to 0 for DFE mode.
-        set lpm_mode($i) 0
+        set lpm_mode($i) $lpm_mode_a
 
         # rate: Set depending on full, half, quarter, octal, or hex modes (see user guide)
         #full=32,half=64,qrtr=128,octal=256,hex=512
-        set rate($i) 32
+        set rate($i) $rate_a
         #set rate($i) 64
         #set rate($i) 128
         #set rate($i) 256
