@@ -26,6 +26,7 @@
 #include "drp.h"
 #include "es_simple_eye_acq.h"
 #include "xaxi_eyescan.h"
+#include <math.h>
 
 #define DEBUG FALSE
 
@@ -60,7 +61,8 @@ void es_simple_eye_acq(eye_scan *eye_struct)
 	u16 es_state = 0;
 	u16 es_done = 0;
 	u16 prescale = 0;
-	u32 center_error = 0;
+	u32 previous_center_error = 0;
+    u32 current_center_error = 0;
 
 	u16 horz_value = 0;
 	u16 vert_value = 0;
@@ -190,7 +192,7 @@ void es_simple_eye_acq(eye_scan *eye_struct)
 		error_count = drp_read(ES_ERROR_COUNT, eye_struct->lane_number);
 		sample_count = drp_read(ES_SAMPLE_COUNT, eye_struct->lane_number);
 		prescale = drp_read(ES_PRESCALE, eye_struct->lane_number);
-		center_error = xaxi_eyescan_read_channel_reg(eye_struct->lane_number,XAXI_EYESCAN_MONITOR) & 0x80FF;
+		current_center_error = xaxi_eyescan_read_channel_reg(eye_struct->lane_number,XAXI_EYESCAN_MONITOR) & 0x00FF;
 		if( DEBUG ) printf( "current prescale read from drp %d\n" , prescale );
 		if(error_count < (10*min_error_count) || error_count > (1000*min_error_count)){
 			if (prescale < max_prescale && error_count < 10*min_error_count){
@@ -231,9 +233,13 @@ void es_simple_eye_acq(eye_scan *eye_struct)
 		current_pixel->sample_count = sample_count;
 		current_pixel->h_offset = eye_struct->horz_offset;
 		current_pixel->v_offset = eye_struct->vert_offset;
-		current_pixel->center_error = center_error;
 		current_pixel->ut_sign = eye_struct->ut_sign;
 		current_pixel->prescale = eye_struct->prescale;
+        
+        current_pixel->center_error = current_center_error - previous_center_error;
+
+        previous_center_error = current_center_error;
+        
 		eye_struct->pixel_count++;
 		if( eye_struct->pixel_count % 10 == 0 ) {
 			if( DEBUG ) printf( "lane %d at pixel %d\n" , eye_struct->lane_number , eye_struct->pixel_count );
