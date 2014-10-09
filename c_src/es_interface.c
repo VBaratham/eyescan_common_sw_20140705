@@ -398,10 +398,11 @@ int es_interface(int s, const void *data, size_t size) {
     		curr_lane = strtoul( tokens[1] , pEnd , 0 );
     	}
 
-    	eyescan_debugging( curr_lane , input_buf );
-    	retval = safe_send( s , input_buf );
-    	if( curr_lane == -1 )
+        eyescan_debugging( curr_lane , input_buf );
+    	if( curr_lane == -1 ) {
+            retval = safe_send( s , input_buf );
     		return retval;
+        }
 
     	u32 drp_addresses[146] = { \
 			  0x000, 0x00D, 0x00E, 0x00F, 0x011, 0x012, 0x013, 0x014, 0x015, 0x016, 0x018, 0x019, 0x01A, 0x01B, 0x01C, 0x01D, 0x01E, 0x01F, 0x020, \
@@ -415,10 +416,16 @@ int es_interface(int s, const void *data, size_t size) {
     	};
 
     	for( idx = 0 ; idx < 146 ; idx++ ) {
-    		memset( input_buf , 0 , RECV_BUF_SIZE+1 );
-    		eyescan_debug_addr( curr_lane , drp_addresses[idx] , input_buf );
-    		retval = safe_send( s , input_buf );
+            eyescan_debug_addr( curr_lane , drp_addresses[idx] , input_buf );
+            if( strlen(input_buf) > 1900 ) {
+                retval = safe_send( s , input_buf );
+                memset( input_buf , 0 , RECV_BUF_SIZE+1 );
+            }
     	}
+    	if( strlen(input_buf) > 0 ) {
+            retval = safe_send( s , input_buf );
+            memset( input_buf , 0 , RECV_BUF_SIZE+1 );
+        }
 
     	return retval;
     }
@@ -511,12 +518,13 @@ int es_interface(int s, const void *data, size_t size) {
             uPodMonitorData *mondata = GetUPodStatus();
 
             memset( input_buf , 0 , RECV_BUF_SIZE+1 );
-            char * temp_format_string = "   uPod Monitor Data\r\n"
-                    "   Base Address %p\n"
-                    "   Status = 0x%02x\n"
-                    "   Temperature %d.%03d C\n"
-                    "   3.3V = %d uV\n"
-                    "   2.5V = %d uV\n";
+//             char * temp_format_string = "   uPod Monitor Data\r\n"
+//                     "   Base Address %p\n"
+//                     "   Status = 0x%02x\n"
+//                     "   Temperature %d.%03d C\n"
+//                     "   3.3V = %d uV\n"
+//                     "   2.5V = %d uV\n";
+            char * temp_format_string = "Addr %p , status 0x%02x , temp %d.%03dC , 3.3V %duV , 2.5V %duV\n";
             safe_sprintf( input_buf , temp_format_string , i2c_addr , mondata->status, \
                     mondata->tempWhole, mondata->tempFrac, \
                     100*mondata->v33, 100*mondata->v25);
@@ -589,12 +597,13 @@ int es_interface(int s, const void *data, size_t size) {
 
     if( command_type == PRINTTEMP ) { // We now update this in monitor, don't bother doing it twice...
         /* now write the web page data in two steps.  FIrst the Xilinx temp/voltages */
-        char *pagefmt = "Xilinx VC707 System Status \r\n"
-                "Uptime: %d s\r\n"
-                "Temperature = %0.1f C\r\n"
-                "INT Voltage = %0.1f V\r\n"
-                "AUX Voltage = %0.1f V\r\n"
-                "BRAM Voltage = %0.1f V\r\n";
+        //char *pagefmt = "Xilinx VC707 System Status \r\n"
+        //        "Uptime: %d s\r\n"
+                //"Temperature = %0.1f C\r\n"
+                //"INT Voltage = %0.1f V\r\n"
+                //"AUX Voltage = %0.1f V\r\n"
+                //"BRAM Voltage = %0.1f V\r\n";
+        char *pagefmt = "uptime %d , temp %0.1fC , intv %0.1fV , auxv %0.1fV , bramv %0.1fV\r\n";
         safe_sprintf(input_buf,pagefmt,procStatus.uptime,procStatus.v7temp,procStatus.v7vCCINT,procStatus.v7vCCAUX,procStatus.v7vBRAM);
         int n=strlen(input_buf);
         int w;
