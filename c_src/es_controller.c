@@ -67,7 +67,7 @@ void init_eye_scan_struct( eye_scan * p_lane ) {
 	p_lane->enable = FALSE;
     p_lane->initialized = FALSE;
 	p_lane->state = WAIT_STATE;
-	p_lane->p_upload_rdy = 0;
+	p_lane->p_upload_rdy = FALSE;
     if( p_lane->pixels == NULL ) {
         p_lane->pixels = malloc( sizeof(eye_scan_pixel) * NUM_PIXELS_TOTAL );
     }
@@ -111,6 +111,7 @@ int configure_eye_scan(eye_scan* p_lane, u8 curr_lane) {
 
     if( DEBUG ) xil_printf( "align word\n");
     drp_write(0x1, ALIGN_COMMA_WORD, curr_lane);
+    drp_write_raw( 0x7f , 0x03E , 0 , 9 , curr_lane ); // ALIGN_COMMA_ENABLE
     
     if( DEBUG ) xil_printf( "fix sdata mask\n");
     //Write ES_SDATA_MASK0-1 attribute based on parallel data width
@@ -197,6 +198,7 @@ int configure_eye_scan(eye_scan* p_lane, u8 curr_lane) {
     drp_write_raw( 0x100 , 0x045 , 0 , 9 , curr_lane ); // CLK_COR_SEQ_1_2
     drp_write_raw( 0x100 , 0x046 , 0 , 9 , curr_lane ); // CLK_COR_SEQ_1_3
     drp_write_raw( 0x100 , 0x047 , 0 , 9 , curr_lane ); // CLK_COR_SEQ_1_4
+// #if 0
     drp_write_raw( 0x1 , 0x03D , 15 , 15 , curr_lane ); // RX_DISPERR_SEQ_MATCH
     drp_write_raw( 0x1 , 0x052 , 11 , 11 , curr_lane ); // CBCC_DATA_SOURCE_SEL
     drp_write_raw( 0x3c , 0x1a , 0 , 7 , curr_lane ); // PD_TRANS_TIME_NONE_P2
@@ -213,11 +215,12 @@ int configure_eye_scan(eye_scan* p_lane, u8 curr_lane) {
     drp_write_raw( 0x0 , 0x13 , 0 , 2 , curr_lane ); // SATA_EIDLE_CFG
     drp_write_raw( 0x64 , 0x1a , 8 , 15 , curr_lane ); // PD_TRANS_TIME_TO_P2
     //drp_write_raw( 0x1c0 , 0x5f , 0 , 15 , curr_lane ); // CPLL_LOCK_CFG
-
-
+// #endif
     drp_write_raw( 0x10 , 0x074 , 11 , 15 , curr_lane ); // RX_DFE_KL_CFG2
     drp_write_raw( 0x6 , 0x007f , 10 , 14 , curr_lane ); // RX_DFE_KL_CFG2
     drp_write_raw( 0xc , 0x7f , 0 , 3 , curr_lane ); // RX_DFE_KL_CFG2
+
+
 #if FREQUENCY == 125
     drp_write_raw( 0x4 , 0x11 , 1 , 3 , curr_lane ); // RX_CM_TRIM
     drp_write_raw( 0x4008 , 0x0a9 , 0 , 15 , curr_lane ); // RXCDR_CFG
@@ -306,16 +309,23 @@ void global_reset_eye_scan() {
 void *es_controller_thread(char * arg) {
 	xil_printf( "starting es_controller_thread\n");
 
-    // Global initialization:
+    // Global initialization
 	global_reset_eye_scan();
+    
 	u32 n_gtx = xaxi_eyescan_read_global(XAXI_EYESCAN_NGTX);
 	u32 n_quad = n_gtx >> 8;
 	n_gtx &= 0x00FF;
 	xil_printf( "n_gtx %d\n" , n_gtx );
 	xil_printf( "n_quad %d\n" , n_quad );
+    
     //Eye scan data structure
 	u32 num_lanes = n_gtx;
     u8 curr_lane , is_all_ready;
+
+    if( num_lanes > MAX_NUMBER_OF_LANES ) {
+        xil_printf( "Too many channels, %d given %d allowed\n" , num_lanes , MAX_NUMBER_OF_LANES );
+        exit(0);
+    }
 
     for( curr_lane=0; curr_lane<num_lanes; curr_lane++ ) {
     	eye_scan_lanes[curr_lane] = malloc( sizeof(eye_scan) );
@@ -325,9 +335,6 @@ void *es_controller_thread(char * arg) {
 
     if( DEBUG ) xil_printf( "memory initialized\n");
 
-    while( do_global_run_eyescan == FALSE )
-    	continue;
-
     //Main Loop
     while (1) {
     	for(curr_lane=0; curr_lane<num_lanes ;curr_lane++){
@@ -336,17 +343,24 @@ void *es_controller_thread(char * arg) {
     			eye_scan_lanes[curr_lane]->initialized = init_eye_scan(eye_scan_lanes[curr_lane], curr_lane);//Initialize scan parameters
     			continue;
     		}
+    		
+    		if( do_global_run_eyescan == FALSE )
+                continue;
 
     		if( RUN_ES_ACQUISITION ) es_simple_eye_acq(eye_scan_lanes[curr_lane]);
 
-    		if( eye_scan_lanes[curr_lane]->state == DONE_STATE && eye_scan_lanes[curr_lane]->p_upload_rdy == 0 ) {
+    		if( eye_scan_lanes[curr_lane]->state == DONE_STATE && eye_scan_lanes[curr_lane]->p_upload_rdy == FALSE ) {
     			xil_printf( "scan done lane %d\n" , curr_lane );
-    			if( RUN_ES_ACQUISITION ) eye_scan_lanes[curr_lane]->p_upload_rdy = 1;
+    			if( RUN_ES_ACQUISITION ) eye_scan_lanes[curr_lane]->p_upload_rdy = TRUE;
     		}
     	}
     	is_all_ready = TRUE;
     	for( curr_lane = 0 ; curr_lane < num_lanes ; curr_lane++ ) {
-    		if( eye_scan_lanes[curr_lane]->enable == TRUE && eye_scan_lanes[curr_lane]->initialized == TRUE && eye_scan_lanes[curr_lane]->p_upload_rdy == FALSE )
+    		if( eye_scan_lanes[curr_lane]->enable == FALSE )
+    			is_all_ready = FALSE;
+    		if( eye_scan_lanes[curr_lane]->initialized == FALSE )
+    			is_all_ready = FALSE;
+    		if( eye_scan_lanes[curr_lane]->p_upload_rdy == FALSE )
     			is_all_ready = FALSE;
     	}
     	is_global_upload_ready = is_all_ready;
@@ -387,42 +401,44 @@ void eyescan_global_debug( char * dbgstr ) {
 }
 
 void eyescan_debugging( int lane , char * dbgstr ) {
-	eyescan_global_debug( dbgstr );
-	if( lane < 0 )
-		return;
-	safe_sprintf( dbgstr , "%seyescan_reset   0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_channel_reg( lane , XAXI_EYESCAN_RESET ) );
-	safe_sprintf( dbgstr , "%seyescan_txcfg   0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_channel_reg( lane , XAXI_EYESCAN_TXCFG ) );
-	safe_sprintf( dbgstr , "%seyescan_rxcfg   0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_channel_reg( lane , XAXI_EYESCAN_RXCFG ) );
-	safe_sprintf( dbgstr , "%seyescan_clkcfg  0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_channel_reg( lane , XAXI_EYESCAN_CLKCFG ) );
-	safe_sprintf( dbgstr , "%seyescan_monitor 0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_channel_reg( lane , XAXI_EYESCAN_MONITOR ) );
-	safe_sprintf( dbgstr , "%seyescan_cursor  0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_channel_reg( lane , XAXI_EYESCAN_CURSOR ) );
+    if( lane < 0 ) {
+        eyescan_global_debug( dbgstr );
+    }
+    else {
+        safe_sprintf( dbgstr , "%seyescan_reset   0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_channel_reg( lane , XAXI_EYESCAN_RESET ) );
+        safe_sprintf( dbgstr , "%seyescan_txcfg   0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_channel_reg( lane , XAXI_EYESCAN_TXCFG ) );
+        safe_sprintf( dbgstr , "%seyescan_rxcfg   0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_channel_reg( lane , XAXI_EYESCAN_RXCFG ) );
+        safe_sprintf( dbgstr , "%seyescan_clkcfg  0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_channel_reg( lane , XAXI_EYESCAN_CLKCFG ) );
+        safe_sprintf( dbgstr , "%seyescan_monitor 0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_channel_reg( lane , XAXI_EYESCAN_MONITOR ) );
+        safe_sprintf( dbgstr , "%seyescan_cursor  0x%08lx\r\n" , dbgstr , xaxi_eyescan_read_channel_reg( lane , XAXI_EYESCAN_CURSOR ) );
 
-	safe_sprintf( dbgstr , "%ses_control        0x%04x\r\n" , dbgstr , drp_read( ES_CONTROL , lane ) );
-	safe_sprintf( dbgstr , "%ses_horz_offset    0x%04x\r\n" , dbgstr , drp_read( ES_HORZ_OFFSET , lane ) );
-	safe_sprintf( dbgstr , "%ses_prescale       0x%04x\r\n" , dbgstr , drp_read( ES_PRESCALE , lane ) );
-	safe_sprintf( dbgstr , "%ses_vert_offset    0x%04x\r\n" , dbgstr , drp_read( ES_VERT_OFFSET , lane ) );
-	safe_sprintf( dbgstr , "%ses_control_status 0x%04x\r\n" , dbgstr , drp_read( ES_CONTROL_STATUS , lane ) );
-	safe_sprintf( dbgstr , "%ses_error_count    0x%04x\r\n" , dbgstr , drp_read( ES_ERROR_COUNT , lane ) );
-	safe_sprintf( dbgstr , "%ses_sample_count   0x%04x\r\n" , dbgstr , drp_read( ES_SAMPLE_COUNT , lane ) );
-	safe_sprintf( dbgstr , "%ses_eyescan_en     0x%04x\r\n" , dbgstr , drp_read( ES_EYESCAN_EN , lane ) );
-	safe_sprintf( dbgstr , "%ses_errdet_en      0x%04x\r\n" , dbgstr , drp_read( ES_ERRDET_EN , lane ) );
-	safe_sprintf( dbgstr , "%ses_sdata_mask0    0x%04x\r\n" , dbgstr , drp_read( ES_SDATA_MASK0 , lane ) );
-	safe_sprintf( dbgstr , "%ses_sdata_mask1    0x%04x\r\n" , dbgstr , drp_read( ES_SDATA_MASK1 , lane ) );
-	safe_sprintf( dbgstr , "%ses_sdata_mask2    0x%04x\r\n" , dbgstr , drp_read( ES_SDATA_MASK2 , lane ) );
-	safe_sprintf( dbgstr , "%ses_sdata_mask3    0x%04x\r\n" , dbgstr , drp_read( ES_SDATA_MASK3 , lane ) );
-	safe_sprintf( dbgstr , "%ses_sdata_mask4    0x%04x\r\n" , dbgstr , drp_read( ES_SDATA_MASK4 , lane ) );
-	safe_sprintf( dbgstr , "%ses_qual_mask0     0x%04x\r\n" , dbgstr , drp_read( ES_QUAL_MASK0 , lane ) );
-	safe_sprintf( dbgstr , "%ses_qual_mask1     0x%04x\r\n" , dbgstr , drp_read( ES_QUAL_MASK1 , lane ) );
-	safe_sprintf( dbgstr , "%ses_qual_mask2     0x%04x\r\n" , dbgstr , drp_read( ES_QUAL_MASK2 , lane ) );
-	safe_sprintf( dbgstr , "%ses_qual_mask3     0x%04x\r\n" , dbgstr , drp_read( ES_QUAL_MASK3 , lane ) );
-	safe_sprintf( dbgstr , "%ses_qual_mask4     0x%04x\r\n" , dbgstr , drp_read( ES_QUAL_MASK4 , lane ) );
-	safe_sprintf( dbgstr , "%spma_rsv2          0x%04x\r\n" , dbgstr , drp_read( PMA_RSV2 , lane ) );
-    
+        safe_sprintf( dbgstr , "%ses_control        0x%04x\r\n" , dbgstr , drp_read( ES_CONTROL , lane ) );
+        safe_sprintf( dbgstr , "%ses_horz_offset    0x%04x\r\n" , dbgstr , drp_read( ES_HORZ_OFFSET , lane ) );
+        safe_sprintf( dbgstr , "%ses_prescale       0x%04x\r\n" , dbgstr , drp_read( ES_PRESCALE , lane ) );
+        safe_sprintf( dbgstr , "%ses_vert_offset    0x%04x\r\n" , dbgstr , drp_read( ES_VERT_OFFSET , lane ) );
+        safe_sprintf( dbgstr , "%ses_control_status 0x%04x\r\n" , dbgstr , drp_read( ES_CONTROL_STATUS , lane ) );
+        safe_sprintf( dbgstr , "%ses_error_count    0x%04x\r\n" , dbgstr , drp_read( ES_ERROR_COUNT , lane ) );
+        safe_sprintf( dbgstr , "%ses_sample_count   0x%04x\r\n" , dbgstr , drp_read( ES_SAMPLE_COUNT , lane ) );
+        safe_sprintf( dbgstr , "%ses_eyescan_en     0x%04x\r\n" , dbgstr , drp_read( ES_EYESCAN_EN , lane ) );
+        safe_sprintf( dbgstr , "%ses_errdet_en      0x%04x\r\n" , dbgstr , drp_read( ES_ERRDET_EN , lane ) );
+        safe_sprintf( dbgstr , "%ses_sdata_mask0    0x%04x\r\n" , dbgstr , drp_read( ES_SDATA_MASK0 , lane ) );
+        safe_sprintf( dbgstr , "%ses_sdata_mask1    0x%04x\r\n" , dbgstr , drp_read( ES_SDATA_MASK1 , lane ) );
+        safe_sprintf( dbgstr , "%ses_sdata_mask2    0x%04x\r\n" , dbgstr , drp_read( ES_SDATA_MASK2 , lane ) );
+        safe_sprintf( dbgstr , "%ses_sdata_mask3    0x%04x\r\n" , dbgstr , drp_read( ES_SDATA_MASK3 , lane ) );
+        safe_sprintf( dbgstr , "%ses_sdata_mask4    0x%04x\r\n" , dbgstr , drp_read( ES_SDATA_MASK4 , lane ) );
+        safe_sprintf( dbgstr , "%ses_qual_mask0     0x%04x\r\n" , dbgstr , drp_read( ES_QUAL_MASK0 , lane ) );
+        safe_sprintf( dbgstr , "%ses_qual_mask1     0x%04x\r\n" , dbgstr , drp_read( ES_QUAL_MASK1 , lane ) );
+        safe_sprintf( dbgstr , "%ses_qual_mask2     0x%04x\r\n" , dbgstr , drp_read( ES_QUAL_MASK2 , lane ) );
+        safe_sprintf( dbgstr , "%ses_qual_mask3     0x%04x\r\n" , dbgstr , drp_read( ES_QUAL_MASK3 , lane ) );
+        safe_sprintf( dbgstr , "%ses_qual_mask4     0x%04x\r\n" , dbgstr , drp_read( ES_QUAL_MASK4 , lane ) );
+        safe_sprintf( dbgstr , "%spma_rsv2          0x%04x\r\n" , dbgstr , drp_read( PMA_RSV2 , lane ) );
+    }    
 	return;
 }
 
 void eyescan_debug_addr( int lane , u32 drp_addr , char * dbgstr ) {
-	safe_sprintf( dbgstr , "lane %d addr 0x%04x val 0x%04x\r\n" , lane , drp_addr , xaxi_eyescan_read_channel_drp( lane , drp_addr ) );
+	safe_sprintf( dbgstr , "%slane %d addr 0x%04x val 0x%04x\r\n" , dbgstr , lane , drp_addr , \
+			xaxi_eyescan_read_channel_drp( lane , drp_addr ) );
 	return;
 }
 

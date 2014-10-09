@@ -41,7 +41,7 @@ typedef struct {
 	s16 v_offset;        //offset of each pixel.
 	s16 ut_sign;            //UT sign of each pixel
 	u8 prescale;   //prescale of each pixel
-	u32 center_error; // Eyescan (0,0) error count from frame checker
+	u8 center_error; // Eyescan (0,0) error count from frame checker
 } eye_scan_pixel;
 
 typedef struct {
