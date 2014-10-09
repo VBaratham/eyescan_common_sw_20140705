@@ -1,4 +1,4 @@
-# #####################################################################################################
+ # #####################################################################################################
 # Eye Scan with MicroBlaze
 # TCL functions to execute test
 # #####################################################################################################
@@ -208,7 +208,25 @@ proc es_host_run {test_ch_a horz_step_a vert_step_a lpm_mode_a rate_a max_presca
             esinit "$curr_ch $max_prescale($curr_ch) $horz_step($curr_ch) $data_width($curr_ch) $vert_step($curr_ch) $lpm_mode($curr_ch) $rate($curr_ch)"
         }
     }
+
+    ### write debugging information to file, after esinit is run, but before actual scan starts
+    set outfile [ open "debug.output" w ]
+    set chan [socket 192.168.1.99 7]
+    puts $chan "dbgeyescan 0"
+    flush $chan
+    while { 1 } {
+        set es_debug [gets $chan]
+        flush $chan
+        if { [ eof $chan ] } {
+            close $chan
+            break
+        }
+        puts $outfile $es_debug
+    }
+    close $outfile
+
     
+    ### Now run the actual scan
     esinit "run"
     
     set wait_time 10000
@@ -227,9 +245,7 @@ proc es_host_run {test_ch_a horz_step_a vert_step_a lpm_mode_a rate_a max_presca
 
         if {$isalldone == 1} {
             set dumpfile [ open "all.dump" w ]
-            set ip_address 192.168.1.99
-            set ip_port 7
-            set chan [socket $ip_address $ip_port]
+            set chan [socket 192.168.1.99 7]
             puts $chan "esread all"
             while {1} {
                 flush $chan
@@ -246,28 +262,7 @@ proc es_host_run {test_ch_a horz_step_a vert_step_a lpm_mode_a rate_a max_presca
             break;
         }
     }
-
-#     foreach curr_ch [array names test_ch] {
-#         puts "Channel $curr_ch: Parsing data"
-#         # Append data to previously created file
-#         set dumpfile [open $out_file($curr_ch) a]
-#         set infile [ open "all.dump" r ]
-#         while {1} {
-#             set line [ gets $infile ]
-#             set fields [split $line " "]
-#             set curr_channel [ lindex $fields 0 ]
-#             if { $curr_channel == $curr_ch } {
-#                 puts $dumpfile $line
-#             }
-#             if { [ eof $infile ] } {
-#                 close $infile
-#                 break
-#             }
-#         }
-#         close $dumpfile
-#     }
-
-#     file delete "all.dump"
+                                
     puts "ALL TEST COMPLETED!"
     return 1
 
@@ -414,7 +409,6 @@ proc es_host_gen_csv {csv_file lpm_mode vert_step horz_arr_a vert_arr_a utsign_a
                     puts $f_csv "Error: X:$curr_horz, Y:$curr_vert, UT:0 data point does not exist!"
                 }
             } else {
-                # puts "here"
                 # In DFE mode, average BER for ut-sign 0 and 1
                 if {[info exists error_count_arr($curr_horz,$curr_vert,0)] == 1 && [info exists error_count_arr($curr_horz,$curr_vert,1)] == 1} {
                     
@@ -437,8 +431,6 @@ proc es_host_gen_csv {csv_file lpm_mode vert_step horz_arr_a vert_arr_a utsign_a
                     
                     # Calculate BER for ut-sign of 1
                     set ber1 [expr double($curr_err1)/double($curr_tot_samp1) ]
-                    
-                    #puts "$curr_err0,$curr_samp0,$curr_prescale0,$curr_tot_samp0"
                     
                     # Calculate final BER
                     set ber [format "%.2E" [expr ($ber0 + $ber1)/2]]
@@ -510,7 +502,6 @@ proc es_host_plot_ascii_eye {f_out lpm_mode horz_arr_a vert_arr_a utsign_arr_a s
                     } else {
                         set curr_pixel "*"
                     }
-                    puts $curr_pixel
                 } else {
                     puts $f_out "Error: X:$curr_row, Y:$curr_col data points do not exist or incomplete (not both UT signs present)!"
                 }

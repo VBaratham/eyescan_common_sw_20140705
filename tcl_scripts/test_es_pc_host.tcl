@@ -18,11 +18,11 @@ proc run_test {horz_step_a vert_step_a max_prescale_a data_width_a lpm_mode_a ra
         
         # horz_step: Horizontal sweep step size. Min value is 1. Max value depends on data rate mode (see user guide & rate variable below)
         set horz_step($i) $horz_step_a
-        #set horz_step($i) 8
+        # set horz_step($i) 8
         # set horz_step($i) 255
         
         # vert_step: Vertical sweep step size. Min value is 1. Max value is 127.
-        #set vert_step($i) 8
+        # set vert_step($i) 8
         # use this setting to generate 1-d bathtub plots
         set vert_step($i) $vert_step_a
         

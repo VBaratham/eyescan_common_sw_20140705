@@ -1,20 +1,27 @@
 set chan [socket 192.168.1.99 7]
 puts $chan "dbgeyescan"
 flush $chan
-set number [gets $chan]
-puts $number
-close $chan
+while { 1 } {
+    puts [gets $chan]
+    flush $chan
+    if { [ eof $chan ] } {
+        close $chan
+        break
+    }
+}
 
 gets stdin
 
-for { set N 0 } { $N < 1 } { incr N } {
 set chan [socket 192.168.1.99 7]
-puts $chan "dbgeyescan $N"
+puts $chan "dbgeyescan 0"
 flush $chan
-for { set i 0 } { $i < 190 } { incr i } {
+while { 1 } {
 	puts [gets $chan]
-}
-close $chan
+    if { [ eof $chan ] } {
+        close $chan
+        break
+    }
+    flush $chan
 }
 
 #set chan [socket 192.168.1.99 7]
