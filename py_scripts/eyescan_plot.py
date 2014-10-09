@@ -19,10 +19,6 @@ def read_csv_file( fname = None , title = None ) :
             vert_val = int( ents[5] )
             horz_val = int( ents[6] )
             ber_val = float( ents[10] )
-        #elif len(ents) == 10 :
-            #vert_val = 0
-            #horz_val = int( ents[5] )
-            #ber_val = float( ents[9] )
         else :
             print 'len(ents)' , len(ents)
             continue
@@ -31,12 +27,14 @@ def read_csv_file( fname = None , title = None ) :
     h2 = graph.GetHistogram()
     canv.SetLogz()
     h2.Draw('colz')
+    h2.GetXaxis().SetTitle('Horz_offset')
+    h2.GetYaxis().SetTitle('Vert_offset')
     return canv , graph
 
 def eyescan_plot( fn = None , title = None ) :
-    c , g = read_csv_file( fn )
+    c , g = read_csv_file( fn , title )
     c.Update()
-    c.SaveAs( '%s.png' % fn )
+    c.SaveAs( '%s.pdf' % fn )
     return
 
 if __name__ == '__main__' :
@@ -45,4 +43,4 @@ if __name__ == '__main__' :
         if arg.find( '\.csv' ) >= 0 :
             if not csv_file :
                 csv_file = arg
-    eyescan_plot( csv_file )
+    eyescan_plot( csv_file , csv_file )
