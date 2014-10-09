@@ -40,6 +40,8 @@ def read_csv_file( fname , title ) :
     if title :
         graph.SetTitle( title )
     graph.Draw('A*')
+    graph.GetXaxis().SetTitle( 'Horz_offset' )
+    graph.GetYaxis().SetTitle( 'ber' )
     canv.SetLogy()
     return canv , graph
 
@@ -61,6 +63,8 @@ def do_plot_comparison( fname0 , fname1 ) :
     f1.close()
     graph0.Draw('A*')
     graph0.GetYaxis().SetRangeUser( 1e-10 , 1 )
+    graph0.GetXaxis().SetTitle( 'Horz_offset' )
+    graph0.GetYaxis().SetTitle( 'ber' )
     canv.SetLogy()
     graph1.Draw('L')
     return canv , graph0 , graph1
@@ -72,7 +76,7 @@ def main_single_plot( fn = None , title = None ) :
     print fn
     c , g = read_csv_file( fn , title )
     c.Update()
-    c.SaveAs( '%s.png' % fn )
+    c.SaveAs( '%s.pdf' % fn )
     #raw_input()
     return True
 
@@ -83,7 +87,7 @@ def bathtub_plot( fn0 = None , fn1 = None , title = None ) :
     if title :
         g0.SetTitle( title )
     c.Update()
-    c.SaveAs( '%s%s.png' % ( fn0.split('/')[-1] , fn1.split('/')[-1] ) )
+    c.SaveAs( '%s%s.pdf' % ( fn0.split('/')[-1] , fn1.split('/')[-1] ) )
 
 #if len(os.sys.argv) == 3 and os.sys.argv[2] != '-b' :
     #main_plot_compare()
