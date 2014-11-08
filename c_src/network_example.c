@@ -117,49 +117,49 @@ void get_temac_info(XAxiEthernet *enetraw ) {
 }
 
 void print_temac_info() {
-	xil_printf("Identification register = %08x\n",ethStatus.regVal[XAE_IDREG_OFFSET]);
-	xil_printf("ability (AR) register = %08x\n",ethStatus.regVal[XAE_ARREG_OFFSET]);
-	xil_printf("filter mask (FMI) register = %08x\n",ethStatus.regVal[XAE_FMI_OFFSET]);
-	xil_printf("reset and address filter (RAF) register = %08x\n",ethStatus.regVal[XAE_RAF_OFFSET]);
-	xil_printf("Lower MAC address (UAW0) = %08x\n",ethStatus.regVal[XAE_UAW0_OFFSET]);
-	xil_printf("Unicast Lower MAC address (UAWL) = %08x\n",ethStatus.regVal[XAE_UAWL_OFFSET]);
-	xil_printf("EMAC configuration (EMMC) register = %08x\n",ethStatus.regVal[XAE_EMMC_OFFSET]);
-	xil_printf("SGMII configuration (PHYC) register = %08x\n",ethStatus.regVal[XAE_PHYC_OFFSET]);
-	xil_printf("Receive configuration (RCW1) register 1= %08x\n",ethStatus.regVal[XAE_RCW1_OFFSET]);
-	xil_printf("Transmit configuration (TC) register = %08x\n",ethStatus.regVal[XAE_TC_OFFSET]);
-	xil_printf("interrupt enable (IE) register = %08x\n",ethStatus.regVal[XAE_IE_OFFSET]);
-	xil_printf("interrupt status (IS) register = %08x\n",ethStatus.regVal[XAE_IS_OFFSET]);
-	xil_printf("interrupt pending (IP) register = %08x\n",ethStatus.regVal[XAE_IP_OFFSET]);
-	xil_printf("PCS status (PPST) register = %08x\n",ethStatus.regVal[0x30]);
-	xil_printf("TX packet count = %d\n",ethStatus.regVal[XAE_TXBL_OFFSET]);
-	xil_printf("RX packet count = %d\n",ethStatus.regVal[XAE_RXBL_OFFSET]);
-	xil_printf("RX undersize frame count = %d\n",ethStatus.regVal[XAE_RXUNDRL_OFFSET]);
-	xil_printf("RX fragment frames count = %d\n",ethStatus.regVal[XAE_RXFRAGL_OFFSET]);
-	xil_printf("RX 64 byte frame count = %d\n",ethStatus.regVal[XAE_RX64BL_OFFSET]);
-	xil_printf("RX 65 to 127 byte frame count = %d\n",ethStatus.regVal[XAE_RX65B127L_OFFSET]);
-	xil_printf("RX 128 to 255 byte frame count = %d\n",ethStatus.regVal[XAE_RX128B255L_OFFSET]);
-	xil_printf("RX 256 to 511 byte frame count = %d\n",ethStatus.regVal[XAE_RX256B511L_OFFSET]);
-	xil_printf("RX 512 to 1023 byte frame count = %d\n",ethStatus.regVal[XAE_RX512B1023L_OFFSET]);
-	xil_printf("RX >= 1024 byte frame count = %d\n",ethStatus.regVal[XAE_RX1024BL_OFFSET]);
-	xil_printf("RX oversize frame count = %d\n",ethStatus.regVal[XAE_RXOVRL_OFFSET]);
-	xil_printf("RX 65 to 127 byte frame count = %d\n",ethStatus.regVal[XAE_RX65B127L_OFFSET]);
-	xil_printf("RX OK frame count = %d\n",ethStatus.regVal[XAE_RXFL_OFFSET]);
-	xil_printf("RX frame check sequenc errors count = %d\n",ethStatus.regVal[XAE_RXFCSERL_OFFSET]);
-	xil_printf("RX OK broadcast frame count = %d\n",ethStatus.regVal[XAE_RXBCSTFL_OFFSET]);
-	xil_printf("RX OK multicast frame count = %d\n",ethStatus.regVal[XAE_RXMCSTFL_OFFSET]);
-	xil_printf("RX OK control frame count = %d\n",ethStatus.regVal[XAE_RXCTRFL_OFFSET]);
-	xil_printf("RX length/type error frame count = %d\n",ethStatus.regVal[XAE_RXLTERL_OFFSET]);
-	xil_printf("RX VLAN frame count = %d\n",ethStatus.regVal[XAE_RXVLANFL_OFFSET]);
-	xil_printf("RX pause frame count = %d\n",ethStatus.regVal[XAE_RXPFL_OFFSET]);
-	xil_printf("RX control frame bad opcode count = %d\n",ethStatus.regVal[XAE_RXUOPFL_OFFSET]);
+    xil_printf("Identification register = %08x\n",ethStatus.regVal[XAE_IDREG_OFFSET]);
+    xil_printf("ability (AR) register = %08x\n",ethStatus.regVal[XAE_ARREG_OFFSET]);
+    xil_printf("filter mask (FMI) register = %08x\n",ethStatus.regVal[XAE_FMI_OFFSET]);
+    xil_printf("reset and address filter (RAF) register = %08x\n",ethStatus.regVal[XAE_RAF_OFFSET]);
+    xil_printf("Lower MAC address (UAW0) = %08x\n",ethStatus.regVal[XAE_UAW0_OFFSET]);
+    xil_printf("Unicast Lower MAC address (UAWL) = %08x\n",ethStatus.regVal[XAE_UAWL_OFFSET]);
+    xil_printf("EMAC configuration (EMMC) register = %08x\n",ethStatus.regVal[XAE_EMMC_OFFSET]);
+    xil_printf("SGMII configuration (PHYC) register = %08x\n",ethStatus.regVal[XAE_PHYC_OFFSET]);
+    xil_printf("Receive configuration (RCW1) register 1= %08x\n",ethStatus.regVal[XAE_RCW1_OFFSET]);
+    xil_printf("Transmit configuration (TC) register = %08x\n",ethStatus.regVal[XAE_TC_OFFSET]);
+    xil_printf("interrupt enable (IE) register = %08x\n",ethStatus.regVal[XAE_IE_OFFSET]);
+    xil_printf("interrupt status (IS) register = %08x\n",ethStatus.regVal[XAE_IS_OFFSET]);
+    xil_printf("interrupt pending (IP) register = %08x\n",ethStatus.regVal[XAE_IP_OFFSET]);
+    xil_printf("PCS status (PPST) register = %08x\n",ethStatus.regVal[0x30]);
+    xil_printf("TX packet count = %d\n",ethStatus.regVal[XAE_TXBL_OFFSET]);
+    xil_printf("RX packet count = %d\n",ethStatus.regVal[XAE_RXBL_OFFSET]);
+    xil_printf("RX undersize frame count = %d\n",ethStatus.regVal[XAE_RXUNDRL_OFFSET]);
+    xil_printf("RX fragment frames count = %d\n",ethStatus.regVal[XAE_RXFRAGL_OFFSET]);
+    xil_printf("RX 64 byte frame count = %d\n",ethStatus.regVal[XAE_RX64BL_OFFSET]);
+    xil_printf("RX 65 to 127 byte frame count = %d\n",ethStatus.regVal[XAE_RX65B127L_OFFSET]);
+    xil_printf("RX 128 to 255 byte frame count = %d\n",ethStatus.regVal[XAE_RX128B255L_OFFSET]);
+    xil_printf("RX 256 to 511 byte frame count = %d\n",ethStatus.regVal[XAE_RX256B511L_OFFSET]);
+    xil_printf("RX 512 to 1023 byte frame count = %d\n",ethStatus.regVal[XAE_RX512B1023L_OFFSET]);
+    xil_printf("RX >= 1024 byte frame count = %d\n",ethStatus.regVal[XAE_RX1024BL_OFFSET]);
+    xil_printf("RX oversize frame count = %d\n",ethStatus.regVal[XAE_RXOVRL_OFFSET]);
+    xil_printf("RX 65 to 127 byte frame count = %d\n",ethStatus.regVal[XAE_RX65B127L_OFFSET]);
+    xil_printf("RX OK frame count = %d\n",ethStatus.regVal[XAE_RXFL_OFFSET]);
+    xil_printf("RX frame check sequenc errors count = %d\n",ethStatus.regVal[XAE_RXFCSERL_OFFSET]);
+    xil_printf("RX OK broadcast frame count = %d\n",ethStatus.regVal[XAE_RXBCSTFL_OFFSET]);
+    xil_printf("RX OK multicast frame count = %d\n",ethStatus.regVal[XAE_RXMCSTFL_OFFSET]);
+    xil_printf("RX OK control frame count = %d\n",ethStatus.regVal[XAE_RXCTRFL_OFFSET]);
+    xil_printf("RX length/type error frame count = %d\n",ethStatus.regVal[XAE_RXLTERL_OFFSET]);
+    xil_printf("RX VLAN frame count = %d\n",ethStatus.regVal[XAE_RXVLANFL_OFFSET]);
+    xil_printf("RX pause frame count = %d\n",ethStatus.regVal[XAE_RXPFL_OFFSET]);
+    xil_printf("RX control frame bad opcode count = %d\n",ethStatus.regVal[XAE_RXUOPFL_OFFSET]);
 }
 
 void print_phy_info(XAxiEthernet *enetraw, int iphy, int nreg) {
     u16 phyreg,ireg;
     for( ireg=0 ; ireg<nreg ; ireg++ ) {
-   	  XAxiEthernet_PhyRead(enetraw,iphy,ireg,&phyreg);
-	  xil_printf("PHY register %d = 0x%04x\n",ireg,phyreg);
-	}
+      XAxiEthernet_PhyRead(enetraw,iphy,ireg,&phyreg);
+      xil_printf("PHY register %d = 0x%04x\n",ireg,phyreg);
+    }
 }
 
 void* network_thread(void *p)
@@ -194,9 +194,9 @@ void* network_thread(void *p)
 #endif
 
 #if LWIP_DHCP==1
-	ipaddr.addr = 0;
-	gw.addr = 0;
-	netmask.addr = 0;
+    ipaddr.addr = 0;
+    gw.addr = 0;
+    netmask.addr = 0;
 #endif
     /* Add network interface to the netif_list, and set it as default */
     if (!xemac_add(netif, &ipaddr, &netmask, &gw, mac_ethernet_address, PLATFORM_EMAC_BASEADDR)) {
@@ -232,10 +232,15 @@ void* network_thread(void *p)
     regval &= ~regmask;
     regval |= speedval;
 #endif
+    unsigned readspeed = get_IEEE_phy_speed(enetraw);
+    xil_printf("Read speed = %d\n",readspeed);
+    readspeed = XAxiEthernet_GetOperatingSpeed(enetraw);
+    xil_printf("Read speed again = %d\n",readspeed);
+
     XAxiEthernet_WriteReg(XPAR_AXIETHERNET_0_BASEADDR,XAE_EMMC_OFFSET,regval);
 #ifdef IS_OTC_BOARD
     u32 phy_wr_data = 0x1040;
-    XAxiEthernet_PhyWrite(enetraw,1,0,phy_wr_data);   
+    XAxiEthernet_PhyWrite(enetraw,0,0,phy_wr_data);
 #else
     xil_printf("\nModified? EMMC content: 0x%08x\n",XAxiEthernet_ReadReg(XPAR_AXIETHERNET_0_BASEADDR,XAE_EMMC_OFFSET));
 #endif
@@ -250,17 +255,17 @@ void* network_thread(void *p)
     dhcp_start(netif);
     while (1) {
 #ifdef OS_IS_FREERTOS
-		vTaskDelay(DHCP_FINE_TIMER_MSECS / portTICK_RATE_MS);
+        vTaskDelay(DHCP_FINE_TIMER_MSECS / portTICK_RATE_MS);
 #else
-		sleep(DHCP_FINE_TIMER_MSECS);
+        sleep(DHCP_FINE_TIMER_MSECS);
 #endif
-		dhcp_fine_tmr();
-		mscnt += DHCP_FINE_TIMER_MSECS;
-		if (mscnt >= DHCP_COARSE_TIMER_SECS*1000) {
-			dhcp_coarse_tmr();
-			mscnt = 0;
-		}
-	}
+        dhcp_fine_tmr();
+        mscnt += DHCP_FINE_TIMER_MSECS;
+        if (mscnt >= DHCP_COARSE_TIMER_SECS*1000) {
+            dhcp_coarse_tmr();
+            mscnt = 0;
+        }
+    }
 #else
     print_headers();
     launch_app_threads();
@@ -285,17 +290,17 @@ void* network_thread(void *p)
     while( doForever || (nloops-- > 0) ) {
         get_temac_info(enetraw);
         if( verbosity>1 ) {
-        	xil_printf("---------------------------------------------------------------\n");
-        	xil_printf("TEMAC information\n");
-        	print_temac_info();
-        	xil_printf("\nMarvell PHY information\n");
-        	print_phy_info(enetraw,7,16);  /* Marvell */
-        	xil_printf("\nInternal PHY information\n");
-        	print_phy_info(enetraw,1,18);  /* Internal */
-        	//my_debugmon_dump_proc_info();
-        	//debugmon_dump_sched_info();
+            xil_printf("---------------------------------------------------------------\n");
+            xil_printf("TEMAC information\n");
+            print_temac_info();
+            xil_printf("\nMarvell PHY information\n");
+            print_phy_info(enetraw,7,16);  /* Marvell */
+            xil_printf("\nInternal PHY information\n");
+            print_phy_info(enetraw,1,18);  /* Internal */
+            //my_debugmon_dump_proc_info();
+            //debugmon_dump_sched_info();
         }
-    	sleep(5000);
+        sleep(5000);
     }
 
     return 0;
@@ -304,13 +309,13 @@ void* network_thread(void *p)
 void* network_main_thread(void *args)
 {
 #if LWIP_DHCP==1
-	int mscnt = 0;
+    int mscnt = 0;
 #endif
-	/* initialize lwIP before calling sys_thread_new */
-	sleep(5000);
-	xil_printf("About to lwip_init\n");
-	lwip_init();
-	xil_printf("Done to lwip_init\n");
+    /* initialize lwIP before calling sys_thread_new */
+    sleep(5000);
+    xil_printf("About to lwip_init\n");
+    lwip_init();
+    xil_printf("Done to lwip_init\n");
 
     /* any thread using lwIP should be created using sys_thread_new */
     sys_thread_new("NW_THRD", network_thread, NULL,
@@ -319,11 +324,11 @@ void* network_main_thread(void *args)
 #if LWIP_DHCP==1
     while (1) {
 #ifdef OS_IS_FREERTOS
-    	vTaskDelay(DHCP_FINE_TIMER_MSECS / portTICK_RATE_MS);
+        vTaskDelay(DHCP_FINE_TIMER_MSECS / portTICK_RATE_MS);
 #else
-    	sleep(DHCP_FINE_TIMER_MSECS);
+        sleep(DHCP_FINE_TIMER_MSECS);
 #endif
-		if (server_netif.ip_addr.addr) {
+        if (server_netif.ip_addr.addr) {
             struct ip_addr *ip = &(server_netif.ip_addr);
             myIP[0] = ip4_addr1(ip);
             myIP[1] = ip4_addr2(ip);
@@ -331,30 +336,30 @@ void* network_main_thread(void *args)
             myIP[3] = ip4_addr4(ip);
 
             xil_printf("DHCP request success\r\n");
-			print_ip_settings(&(server_netif.ip_addr), &(server_netif.netmask), &(server_netif.gw));
-			/* print all application headers */
-			print_headers();
-			/* now we can start application threads */
-			launch_app_threads();
-			break;
-		}
-		mscnt += DHCP_FINE_TIMER_MSECS;
-		if (mscnt >= 10000) {
-			xil_printf("ERROR: DHCP request timed out\r\n");
-			xil_printf("Configuring default IP of 192.168.1.99\r\n");
-			IP4_ADDR(&(server_netif.ip_addr),  192, 168,   1, 99);
-			IP4_ADDR(&(server_netif.netmask), 255, 255, 255,  0);
-			IP4_ADDR(&(server_netif.gw),      192, 168,   1,  1);
-			print_ip_settings(&(server_netif.ip_addr), &(server_netif.netmask), &(server_netif.gw));
-			/* print all application headers */
-			print_headers();
-			launch_app_threads();
-			break;
-		}
+            print_ip_settings(&(server_netif.ip_addr), &(server_netif.netmask), &(server_netif.gw));
+            /* print all application headers */
+            print_headers();
+            /* now we can start application threads */
+            launch_app_threads();
+            break;
+        }
+        mscnt += DHCP_FINE_TIMER_MSECS;
+        if (mscnt >= 10000) {
+            xil_printf("ERROR: DHCP request timed out\r\n");
+            xil_printf("Configuring default IP of 192.168.1.99\r\n");
+            IP4_ADDR(&(server_netif.ip_addr),  192, 168,   1, 99);
+            IP4_ADDR(&(server_netif.netmask), 255, 255, 255,  0);
+            IP4_ADDR(&(server_netif.gw),      192, 168,   1,  1);
+            print_ip_settings(&(server_netif.ip_addr), &(server_netif.netmask), &(server_netif.gw));
+            /* print all application headers */
+            print_headers();
+            launch_app_threads();
+            break;
+        }
 
-	}
+    }
 #ifdef OS_IS_FREERTOS
-	vTaskDelete(NULL);
+    vTaskDelete(NULL);
 #endif
 #endif
 
@@ -363,34 +368,34 @@ void* network_main_thread(void *args)
 #ifdef __arm__
 void vApplicationMallocFailedHook( void )
 {
-	/* vApplicationMallocFailedHook() will only be called if
-	configUSE_MALLOC_FAILED_HOOK is set to 1 in FreeRTOSConfig.h.  It is a hook
-	function that will get called if a call to pvPortMalloc() fails.
-	pvPortMalloc() is called internally by the kernel whenever a task, queue or
-	semaphore is created.  It is also called by various parts of the demo
-	application.  If heap_1.c or heap_2.c are used, then the size of the heap
-	available to pvPortMalloc() is defined by configTOTAL_HEAP_SIZE in
-	FreeRTOSConfig.h, and the xPortGetFreeHeapSize() API function can be used
-	to query the size of free heap space that remains (although it does not
-	provide information on how the remaining heap might be fragmented). */
-	taskDISABLE_INTERRUPTS();
-	for( ;; );
+    /* vApplicationMallocFailedHook() will only be called if
+    configUSE_MALLOC_FAILED_HOOK is set to 1 in FreeRTOSConfig.h.  It is a hook
+    function that will get called if a call to pvPortMalloc() fails.
+    pvPortMalloc() is called internally by the kernel whenever a task, queue or
+    semaphore is created.  It is also called by various parts of the demo
+    application.  If heap_1.c or heap_2.c are used, then the size of the heap
+    available to pvPortMalloc() is defined by configTOTAL_HEAP_SIZE in
+    FreeRTOSConfig.h, and the xPortGetFreeHeapSize() API function can be used
+    to query the size of free heap space that remains (although it does not
+    provide information on how the remaining heap might be fragmented). */
+    taskDISABLE_INTERRUPTS();
+    for( ;; );
 }
 /*-----------------------------------------------------------*/
 
 void vApplicationStackOverflowHook( xTaskHandle *pxTask, signed char *pcTaskName )
 {
-	( void ) pcTaskName;
-	( void ) pxTask;
+    ( void ) pcTaskName;
+    ( void ) pxTask;
 
-	/* vApplicationStackOverflowHook() will only be called if
-	configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2.  The handle and name
-	of the offending task will be passed into the hook function via its
-	parameters.  However, when a stack has overflowed, it is possible that the
-	parameters will have been corrupted, in which case the pxCurrentTCB variable
-	can be inspected directly. */
-	taskDISABLE_INTERRUPTS();
-	for( ;; );
+    /* vApplicationStackOverflowHook() will only be called if
+    configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2.  The handle and name
+    of the offending task will be passed into the hook function via its
+    parameters.  However, when a stack has overflowed, it is possible that the
+    parameters will have been corrupted, in which case the pxCurrentTCB variable
+    can be inspected directly. */
+    taskDISABLE_INTERRUPTS();
+    for( ;; );
 }
 void vApplicationSetupHardware( void )
 {
