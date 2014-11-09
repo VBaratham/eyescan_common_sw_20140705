@@ -296,7 +296,7 @@ proc es_host_process_dump {in_file curr_ch horz_arr_a vert_arr_a utsign_arr_a sa
     upvar $prescale_arr_a prescale_arr
     
     set f_in [open $in_file r]
-        
+
     set count 0
     while {[gets $f_in line] >= 0} {
         if {$line != "" && [regexp {^#} $line] != 1} {

@@ -19,7 +19,7 @@ def run_command( command ) :
     else :
         print command
 
-def run_eye_scan( label , scan_type , scan_rate = 32 ) :
+def run_eye_scan( label , scan_type , scan_rate = 32 , max_prescale = 8 , data_width = 40 , lpm_mode = 0 ) :
     ''' 
     Run eye scan, taking scan_type and scan_rate as inputs.  Communicate with OTC through network socket.
     Use either the old tcl scripts, or newly written run_es_host_pc.
@@ -28,10 +28,6 @@ def run_eye_scan( label , scan_type , scan_rate = 32 ) :
     vert_step = 8
     if scan_type == 1 :
         vert_step = 127
-    max_prescale = 8
-    data_width = 40
-    lpm_mode = 0
-    rate = scan_rate
     if scan_rate >= 128 :
         horz_step = 8
 
@@ -45,7 +41,7 @@ def run_eye_scan( label , scan_type , scan_rate = 32 ) :
         if os.path.exists( '%s/test.tcl' % TCLDIR ) :
             os.chdir( TCLDIR )
             run_command( 'rm *.dump *.csv *.txt *.output' )
-            run_command( 'tclsh test.tcl %d %d %d %d %d %d' % ( horz_step , vert_step , max_prescale , data_width , lpm_mode , rate ) )
+            run_command( 'tclsh test.tcl %d %d %d %d %d %d' % ( horz_step , vert_step , max_prescale , data_width , lpm_mode , scan_rate ) )
         else :
             print 'Tcl directory %s doesn\'t exist' % TCLDIR
             return
@@ -54,8 +50,8 @@ def run_eye_scan( label , scan_type , scan_rate = 32 ) :
         
         run_command( 'mkdir -p %s/%s' % ( PWD, SAMP_NAME ) )
         os.chdir( '%s/%s' % ( PWD , SAMP_NAME ) )
-        run_es_host( horz_step , vert_step , max_prescale , data_width , lpm_mode , rate )
-        process_es_output( horz_step , vert_step , max_prescale , data_width , lpm_mode , rate )
+        run_es_host( horz_step , vert_step , max_prescale , data_width , lpm_mode , scan_rate )
+        process_es_output( horz_step , vert_step , max_prescale , data_width , lpm_mode , scan_rate )
         
     run_command( 'tar zcvf %s.tar.gz *.dump *.csv *.output *.txt' % ( SAMP_NAME ) )
     run_command( 'rm *.dump *.csv *.txt *.output' )

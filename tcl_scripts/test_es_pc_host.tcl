@@ -1,9 +1,9 @@
 source es_pc_host.tcl
 
 proc run_test {horz_step_a vert_step_a max_prescale_a data_width_a lpm_mode_a rate_a} {
-    
+
     puts "$horz_step_a $vert_step_a $max_prescale_a $data_width_a $lpm_mode_a $rate_a"
-    
+
     #####################
     # Set test parameters
     #####################

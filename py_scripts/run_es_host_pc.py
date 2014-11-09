@@ -7,6 +7,7 @@ import time
 
 valid_rates = ( 32 , 64 , 128 , 256 , 512 )
 valid_widths = ( 16 , 20 , 32 , 40 )
+NUMBER_OF_CHANNELS = 48
 
 def send_command( ostr , host = '192.168.1.99' , portno = 7 , timeout = 0.1 , outfile = None ) :
     import socket
@@ -81,7 +82,7 @@ def run_es_host( horz_step = 1 , vert_step = 8 , max_prescale = 8 , datawidth = 
     if rate not in valid_rates or datawidth not in valid_widths :
         return 0
     
-    for idx in range( 0 , 48 ) :
+    for idx in range( 0 , NUMBER_OF_CHANNELS ) :
         print 'Writing settings to channel %d' % idx
         send_command( 'esinit %s %d %d %d %d %d %d"' % ( idx , max_prescale , horz_step , datawidth , vert_step , lpm_mode , rate ) )
 
@@ -146,7 +147,7 @@ def get_pixel_key( hoff , voff , utsign ) :
     return '%s %s %s' % ( hoff , voff , utsign )
 
 class es_lane :
-    def __init__( self , curr_lane , pixels = [] ) :
+    def __init__( self , curr_lane , pixels = None ) :
         self.curr_lane = curr_lane
         self.pixels = pixels
         self.pixel_dict = {}
@@ -194,7 +195,7 @@ class es_pixel :
 def process_es_output( horz_step = 1 , vert_step = 8 , max_prescale = 8 , datawidth = 32 , lpm_mode = 0 , rate = 40 , dumpfile = 'all.dump' ) :
     
     all_lanes = {}
-    for lane in range( 0 , 48 ) :
+    for lane in range( 0 , NUMBER_OF_CHANNELS ) :
         all_lanes[lane] = es_lane( lane , [] )
     
     for line in open( dumpfile , 'r' ).xreadlines() :
@@ -209,7 +210,7 @@ def process_es_output( horz_step = 1 , vert_step = 8 , max_prescale = 8 , datawi
     # write ascii eye diagram
     asciif = open( 'ascii_eye.txt' , 'w' )
     cerrf = open( 'center_error.txt' , 'w' )
-    for lane in range( 0 , 48 ) :
+    for lane in range( 0 , NUMBER_OF_CHANNELS ) :
         asciif.write( 'CHANNEL %d\n' % lane )
         
         idx = 0
