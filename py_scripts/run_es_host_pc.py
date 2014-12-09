@@ -98,8 +98,8 @@ def run_es_host(horz_step = 1, vert_step = 8, max_prescale = 8, datawidth = 32, 
 
 
     while True :
-        time.sleep(10)
         print 'sleep for 10s'
+        time.sleep(10)
 
         is_all_done = int(send_command('esdone all', timeout = 1).strip())
         if is_all_done == 0 :
@@ -121,7 +121,7 @@ def run_es_host(horz_step = 1, vert_step = 8, max_prescale = 8, datawidth = 32, 
                 #else :
                     #upod_mon[um.addr].append(um)
 
-            print bm.uptime, bm.temp
+            #print bm.uptime, bm.temp
             #um = upod_mon[0x30][-1]
             #print um.uptime, um.temp
 
@@ -136,7 +136,7 @@ def run_es_host(horz_step = 1, vert_step = 8, max_prescale = 8, datawidth = 32, 
 
     tmon = open('temperature_mon.output', 'w')
     for ti, tm in board_mon :
-        print ti,tm
+        #print ti,tm
         tmon.write('%d %d\n'% (ti, tm))
     tmon.close()
 
@@ -195,7 +195,7 @@ class es_pixel :
         self.center_error = center_error
 
     def print_pixel(self) :
-        print '%d %d %d %d %d %d %d' % (self.curr_pixel, self.horz_offset, self.vert_offset, self.error_count, self.sample_count, self.prescale, self.ut_sign)
+        print 'pixel %d %d %d %d %d %d %d' % (self.curr_pixel, self.horz_offset, self.vert_offset, self.error_count, self.sample_count, self.prescale, self.ut_sign)
 
 
 def process_es_output(horz_step = 1, vert_step = 8, max_prescale = 8, datawidth = 32, lpm_mode = 0, rate = 40, dumpfile = 'all.dump') :
@@ -284,7 +284,7 @@ def process_es_output(horz_step = 1, vert_step = 8, max_prescale = 8, datawidth 
                 idx += 1
             asciif.write('\n\n')
         csvf.close()
-        cerrf.write('%d %d %d\n' % (lane, cerr, tsamp))
+        cerrf.write('%d %d %d %s\n' % (lane, cerr, tsamp, float(cerr)/float(tsamp)))
     asciif.close()
     cerrf.close()
 

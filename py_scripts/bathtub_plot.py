@@ -19,12 +19,12 @@ def fill_graph(fd, gr, factor = 1.0) :
             horz_val = int(ents[5])
             ber_val = float(ents[9])
         else :
-            print 'len(ents)', len(ents)
+            print 'len(ents)', len(ents) , ents
             continue
         if vert_val != 0 :
             continue
         #horz_val *= (0.5/256.)
-        print horz_val, ber_val
+        #print horz_val, ber_val
         gr.SetPoint(idx, horz_val, ber_val)
         idx += 1
     return gr
@@ -73,7 +73,7 @@ def main_single_plot(fn = None, title = None) :
     if not fn :
         return False
     graphs = []
-    print fn
+    #print fn
     c, g = read_csv_file(fn, title)
     c.Update()
     c.SaveAs('%s.pdf' % fn)
@@ -104,4 +104,7 @@ if __name__ == '__main__' :
                 csv_file_0 = arg
             else :
                 csv_file_1 = arg
-    bathtub_plot(csv_file_0, csv_file_1, '%s_%s' % (csv_file_0.split('/')[-1], csv_file_1.split('/')[-1]))
+    if csv_file_1:
+        bathtub_plot(csv_file_0, csv_file_1, '%s_%s' % (csv_file_0.split('/')[-1], csv_file_1.split('/')[-1]))
+    else:
+        main_single_plot(csv_file_0, '%s' % csv_file_0.split('/')[-1])

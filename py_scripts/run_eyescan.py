@@ -83,6 +83,7 @@ def make_plots(fn, scan_type, title, freq, fn2 = None) :
     parse_registers.parse_registers(debug_fname = 'debug_end.output', regmap_fname = '../register_map.txt', output_fname = 'register_settings.txt', ibert_fname = '../register_default_ibert_640.txt', ibert_comp_outname = 'ibert_comp.txt')
     import central_error_plot
     central_error_plot.central_error_plot(fname = 'center_error.txt', title = 'Central BER')
+    central_error_plot.central_error_frequency_plot(fname = 'all.dump', title = 'Central Bit Error Frequency')
     gl = glob.glob('Ch*.csv')
     nf = len(gl)
     for fn in gl :
@@ -99,8 +100,8 @@ def make_plots(fn, scan_type, title, freq, fn2 = None) :
     run_command('mv dummy %s' % dn)
     run_command('mv %s/dummy.tex %s/%s.tex' % (dn, dn, dn))
     run_command('sed -i \'s:DUMMY:%s:g\' %s/%s.tex' % (dn, dn, dn))
-    run_command('sed -i \'s:freq:%d:g\' %s/%s.tex' % (freq, dn, dn))
-    run_command('mv central_ber.pdf %s/' % dn)
+    run_command('sed -i \'s:FREQUENCY:%d:g\' %s/%s.tex' % (freq, dn, dn))
+    run_command('mv central_ber.pdf central_error_freq.pdf %s/' % dn)
     if os.path.exists('/usr/bin/a2ps') :
         run_command('a2ps ibert_comp.txt -o %s/ibert_comp.ps' % dn)
         run_command('a2ps register_settings.txt -o %s/register_settings.ps' % dn)
