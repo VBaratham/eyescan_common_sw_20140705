@@ -26,6 +26,7 @@
 
 #define MODIFY_CURSOR FALSE
 #define MODIFY_DRP_REGISTERS FALSE
+#define TURN_ON_CONFIG_REGISTERS FALSE
 // #define FREQUENCY 125
 // #define FREQUENCY 625
 #define FREQUENCY 640
@@ -110,8 +111,8 @@ int configure_eye_scan(eye_scan* p_lane, u8 curr_lane) {
     drp_write(0x1, ES_ERRDET_EN, curr_lane );
 
     if( DEBUG ) xil_printf( "align word\n");
-    drp_write(0x1, ALIGN_COMMA_WORD, curr_lane);
-    drp_write_raw( 0x7f , 0x03E , 0 , 9 , curr_lane ); // ALIGN_COMMA_ENABLE
+    if( TURN_ON_CONFIG_REGISTERS ) drp_write(0x1, ALIGN_COMMA_WORD, curr_lane);
+    if( TURN_ON_CONFIG_REGISTERS ) drp_write_raw( 0x7f , 0x03E , 0 , 9 , curr_lane ); // ALIGN_COMMA_ENABLE
     
     if( DEBUG ) xil_printf( "fix sdata mask\n");
     //Write ES_SDATA_MASK0-1 attribute based on parallel data width
@@ -124,8 +125,10 @@ int configure_eye_scan(eye_scan* p_lane, u8 curr_lane) {
               drp_write(0x5 , TX_DATA_WIDTH , curr_lane );
               drp_write(0x5 , RX_DATA_WIDTH , curr_lane );
 #endif
+#if TURN_ON_CONFIG_REGISTERS
               drp_write(0x0000, ES_SDATA_MASK0, curr_lane);
               drp_write(0x0000, ES_SDATA_MASK1, curr_lane);
+#endif
               }
               break;
           case 32: {
@@ -135,8 +138,10 @@ int configure_eye_scan(eye_scan* p_lane, u8 curr_lane) {
               drp_write(0x4 , TX_DATA_WIDTH , curr_lane );
               drp_write(0x4 , RX_DATA_WIDTH , curr_lane );
 #endif
+#if TURN_ON_CONFIG_REGISTERS
               drp_write(0x00FF, ES_SDATA_MASK0, curr_lane);
               drp_write(0x0000, ES_SDATA_MASK1, curr_lane);
+#endif
               }
               break;
           case 20: {
@@ -146,8 +151,10 @@ int configure_eye_scan(eye_scan* p_lane, u8 curr_lane) {
               drp_write(0x3 , TX_DATA_WIDTH , curr_lane );
               drp_write(0x3 , RX_DATA_WIDTH , curr_lane );
 #endif
+#if TURN_ON_CONFIG_REGISTERS
               drp_write(0xFFFF, ES_SDATA_MASK0, curr_lane);
               drp_write(0x000F, ES_SDATA_MASK1, curr_lane);
+#endif
               }
               break;
           case 16: {
@@ -157,13 +164,17 @@ int configure_eye_scan(eye_scan* p_lane, u8 curr_lane) {
               drp_write(0x2 , TX_DATA_WIDTH , curr_lane );
               drp_write(0x2 , RX_DATA_WIDTH , curr_lane );
 #endif
+#if TURN_ON_CONFIG_REGISTERS
               drp_write(0xFFFF, ES_SDATA_MASK0, curr_lane);
               drp_write(0x00FF, ES_SDATA_MASK1, curr_lane);
+#endif
               }
               break;
           default:{
+#if TURN_ON_CONFIG_REGISTERS
               drp_write(0xFFFF, ES_SDATA_MASK0, curr_lane);
               drp_write(0xFFFF, ES_SDATA_MASK1, curr_lane);
+#endif
               }
         }
 
@@ -271,17 +282,22 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
     if( DEBUG ) xil_printf( "do resets\n");
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 1);
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 1);
-    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0F00);
-    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
-    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0020);
-    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
-    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0x0010);
-    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
+
+    //u32 chan_resets[4] = { 0xF00 , 0x20 , 0x10 , 0xc0 };
+    u32 chan_resets[4] = { 0xF00 , 0x20 , 0x10 , 0x0 };
+    for( i=0 ; i<4 ; i++ ) {
+    	xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, chan_resets[i] );
+    	xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
+    }
 
     sleep(100);
     u32 reset_val = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_RESET);
-    if( reset_val != 0x0000000F )
+    i=0;
+    while( reset_val != 0x0000000F && i < 5 ) {
         xil_printf("Channel %d: Reset register(init): %08x\n",curr_lane,reset_val);
+        sleep(100);
+        i++;
+    }
 
 #if DEBUG
     u32 txuserready = xaxi_eyescan_read_channel_reg( curr_lane , XAXI_EYESCAN_TXCFG );
@@ -301,7 +317,15 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
 }
 
 void global_reset_eye_scan() {
-    xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,0x2);
+	u32 rstval = 0x0;
+	//rstval = ( 1 << 3  | 1 << 4 );
+	//xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,rstval);
+	//xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,0x0);
+	//rstval = ( 1 << 1 | 1 << 2 | 1 << 3  | 1 << 4 );
+	//rstval = ( 1 << 1 | 1 << 4 );
+    //xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,rstval);
+	rstval = ( 1 << 1 );
+    xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,rstval);
 }
 
 void *es_controller_thread(char * arg) {
@@ -354,8 +378,8 @@ void *es_controller_thread(char * arg) {
         }
         is_all_ready = TRUE;
         for( curr_lane = 0 ; curr_lane < num_lanes ; curr_lane++ ) {
-            if( eye_scan_lanes[curr_lane]->enable == FALSE )
-                is_all_ready = FALSE;
+            if( eye_scan_lanes[curr_lane]->enable == FALSE ) // If channel isn't enabled, don't worry about whether or not its ready to upload...
+                continue;
             if( eye_scan_lanes[curr_lane]->initialized == FALSE )
                 is_all_ready = FALSE;
             if( eye_scan_lanes[curr_lane]->p_upload_rdy == FALSE )
@@ -378,22 +402,22 @@ void eyescan_global_debug( char * dbgstr ) {
 
     if( DEBUG ) xil_printf( "got here %s\n",dbgstr);
 
+#ifdef XAXI_EYESCAN_BASEFREQ_COUNT
     /* Check the frequency counting logic on channel 0 only, but in the global space. */
   u32 grd = xaxi_eyescan_read_global(XAXI_EYESCAN_GLOBAL_RESET);
   xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,grd | 0x200);  // Clear it
   xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,grd | 0x100);  // Enable it (and remove the clear)
   sleep(100);   // Probably long enough to halt with max count
-#ifdef XAXI_EYESCAN_BASEFREQ_COUNT
   xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,grd);  // Disable it (w/out clearing it)
   safe_sprintf( dbgstr , "%sXAXI_EYESCAN_BASEFREQ_COUNT 0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_BASEFREQ_COUNT) );
   safe_sprintf( dbgstr , "%sXAXI_EYESCAN_FREQ0_COUNT    0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_FREQ0_COUNT) );
   safe_sprintf( dbgstr , "%sXAXI_EYESCAN_FREQ1_COUNT    0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_FREQ1_COUNT) );
   safe_sprintf( dbgstr , "%sXAXI_EYESCAN_FREQ2_COUNT    0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_FREQ2_COUNT) );
   safe_sprintf( dbgstr , "%sXAXI_EYESCAN_FREQ3_COUNT    0x%04x\r\n" , dbgstr , xaxi_eyescan_read_global(XAXI_EYESCAN_FREQ3_COUNT) );
-#endif
   xaxi_eyescan_write_global(XAXI_EYESCAN_GLOBAL_RESET,grd | 0x100);  // Enable it (and remove the clear)
 
   if( DEBUG ) xil_printf( "and here %s\n",dbgstr);
+#endif
 
     return;
 }
