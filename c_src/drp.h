@@ -72,6 +72,7 @@
 #define DRP_ADDR_TX_DATA_WIDTH     0x06B
 #define DRP_ADDR_RX_INT_DATAWIDTH  0x011
 #define DRP_ADDR_RX_DATA_WIDTH     0x011
+#define DRP_RX_PRBS_ERR_CNT        0x15C
 
 static const u16 drp_addr[25] = { DRP_ADDR_ES_CONTROL,
                                   DRP_ADDR_ES_HORZ_OFFSET,
