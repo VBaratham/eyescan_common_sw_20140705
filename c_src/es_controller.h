@@ -18,7 +18,7 @@
 #include "xil_types.h"
 //#include "xiomodule.h"
 
-// #define IS_OTC_BOARD
+#define IS_OTC_BOARD
 
 #define DONE_STATE         0x0001
 #define WAIT_STATE         0x0000

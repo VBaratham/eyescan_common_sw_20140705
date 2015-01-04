@@ -280,8 +280,8 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
 #endif
 
     if( DEBUG ) xil_printf( "do resets\n");
-    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 1);
-    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 1);
+    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 1 | ( 1 << 8 ) );
+    xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 1 | ( 1 << 8 ) );
 
     //u32 chan_resets[4] = { 0xF00 , 0x20 , 0x10 , 0xc0 };
     u32 chan_resets[4] = { 0xF00 , 0x20 , 0x10 , 0x0 };
@@ -454,7 +454,7 @@ void eyescan_debugging( int lane , char * dbgstr ) {
         safe_sprintf( dbgstr , "%ses_qual_mask3     0x%04x\r\n" , dbgstr , drp_read( ES_QUAL_MASK3 , lane ) );
         safe_sprintf( dbgstr , "%ses_qual_mask4     0x%04x\r\n" , dbgstr , drp_read( ES_QUAL_MASK4 , lane ) );
         safe_sprintf( dbgstr , "%spma_rsv2          0x%04x\r\n" , dbgstr , drp_read( PMA_RSV2 , lane ) );
-    }    
+    }
     return;
 }
 

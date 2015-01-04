@@ -28,7 +28,7 @@
 #include "xaxi_eyescan.h"
 #include <math.h>
 
-#define DEBUG TRUE
+#define DEBUG FALSE
 
 void es_simple_eye_acq(eye_scan *eye_struct)
 {
@@ -176,11 +176,24 @@ void es_simple_eye_acq(eye_scan *eye_struct)
 
         //xaxi_eyescan_write_channel_reg(eye_struct->lane_number, XAXI_EYESCAN_RESET, 0);
 
+        xaxi_eyescan_write_channel_reg(eye_struct->lane_number, XAXI_EYESCAN_RESET, 0x80 );
+        xaxi_eyescan_write_channel_reg(eye_struct->lane_number, XAXI_EYESCAN_RESET, 0);
+
+
         //Assert RUN bit to start error and sample counters
         drp_write(1, ES_CONTROL, eye_struct->lane_number);
 
         //Transition to 'COUNT' state, allow other operations while errors & samples accumulate
         eye_struct->state = COUNT_STATE;
+
+        //if( eye_struct->pixel_count == 10 && eye_struct->lane_number == 5 ) {
+        //	sleep(10);
+        //	xaxi_eyescan_write_channel_reg(eye_struct->lane_number, XAXI_EYESCAN_TXCFG, 1 | ( 1 << 8 ) | ( 1 << 11 ) );
+        //}
+
+        //xaxi_eyescan_write_channel_reg(eye_struct->lane_number, XAXI_EYESCAN_RESET, 0x80 );
+        //xaxi_eyescan_write_channel_reg(eye_struct->lane_number, XAXI_EYESCAN_RESET, 0);
+
         return;
     }
 
@@ -191,8 +204,9 @@ void es_simple_eye_acq(eye_scan *eye_struct)
     if(eye_struct->state == COUNT_STATE) { // (COUNT x0030 = 48)
         //If acquisition is not finished, return
         if(es_done == 0){
-            current_center_error = xaxi_eyescan_read_channel_reg(eye_struct->lane_number,XAXI_EYESCAN_MONITOR);
-            if( current_center_error >> 14 & 1 ) printf( "monitor register 0 0x%08lx\n" , current_center_error );
+            current_center_error = drp_read_raw( DRP_RX_PRBS_ERR_CNT , 0 , 15 , eye_struct->lane_number );
+            //current_center_error = xaxi_eyescan_read_channel_reg(eye_struct->lane_number,XAXI_EYESCAN_MONITOR);
+            //if( current_center_error >> 14 & 1 ) printf( "monitor register 0 %d 0x%08lx\n" , eye_struct->lane_number , current_center_error );
             return;
         }
         //If DONE, deassert RUN bit to transition to Eye Scan WAIT state
@@ -202,7 +216,8 @@ void es_simple_eye_acq(eye_scan *eye_struct)
         error_count = drp_read(ES_ERROR_COUNT, eye_struct->lane_number);
         sample_count = drp_read(ES_SAMPLE_COUNT, eye_struct->lane_number);
         prescale = drp_read(ES_PRESCALE, eye_struct->lane_number);
-        current_center_error = xaxi_eyescan_read_channel_reg(eye_struct->lane_number,XAXI_EYESCAN_MONITOR) & 0x00FF;
+        current_center_error = drp_read_raw( DRP_RX_PRBS_ERR_CNT , 0 , 15 , eye_struct->lane_number );
+        //current_center_error = xaxi_eyescan_read_channel_reg(eye_struct->lane_number,XAXI_EYESCAN_MONITOR) & 0x00FF;
         if( DEBUG ) printf( "current prescale read from drp %d\n" , prescale );
         if(error_count < (10*min_error_count) || error_count > (1000*min_error_count)){
             if (prescale < max_prescale && error_count < 10*min_error_count){
@@ -235,10 +250,7 @@ void es_simple_eye_acq(eye_scan *eye_struct)
             }
             drp_write(next_prescale,ES_PRESCALE, eye_struct->lane_number);
         }
-        
-        //xaxi_eyescan_write_channel_reg(eye_struct->lane_number, XAXI_EYESCAN_RESET, 0xc0 );
-        //xaxi_eyescan_write_channel_reg(eye_struct->lane_number, XAXI_EYESCAN_RESET, 0);
-        
+
         //sleep(100);
 
         if( DEBUG ) printf( "lane %d pixel_count %d error_count %d sample_count %d prescale %d\n" , eye_struct->lane_number , eye_struct->pixel_count , error_count , sample_count , prescale );
@@ -259,8 +271,11 @@ void es_simple_eye_acq(eye_scan *eye_struct)
         //current_pixel->center_error = current_center_error - previous_center_error;
         current_pixel->center_error = current_center_error;
 
-        current_center_error = xaxi_eyescan_read_channel_reg(eye_struct->lane_number,XAXI_EYESCAN_MONITOR);
-        if( current_center_error >> 14 & 1 ) printf( "monitor register 2 0x%08lx\n" , current_center_error );
+        current_center_error = drp_read_raw( DRP_RX_PRBS_ERR_CNT , 0 , 15 , eye_struct->lane_number );
+        //current_center_error = xaxi_eyescan_read_channel_reg(eye_struct->lane_number,XAXI_EYESCAN_MONITOR);
+        //if( ( ( current_center_error >> 13 ) & 3 ) != 0x3 )
+        //	printf( "%d monitor register 2 %d 0x%08lx %d\n" , eye_struct->pixel_count , \
+        //		eye_struct->lane_number , current_center_error , ( current_center_error >> 13 ) & 3 );
         
         eye_struct->pixel_count++;
         if( eye_struct->pixel_count % 10 == 0 ) {

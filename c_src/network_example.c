@@ -48,7 +48,7 @@ void* network_main_thread(void *args);
 #include "localNetworkConfig.h"
 #include "SysStatus.h"
 
-// #define IS_OTC_BOARD
+#define IS_OTC_BOARD
 
 #ifndef IS_OTC_BOARD
 #define LWIP_DHCP 1
