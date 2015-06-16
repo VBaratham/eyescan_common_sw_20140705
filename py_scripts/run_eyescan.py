@@ -11,6 +11,7 @@ remote_dir = '/home/ddboline/setup_files/build/eyescanOTC_20140907/otc/Debug/py_
 
 TURN_ON_COMMANDS = True
 USE_PYTHON_CONTROLLER = True
+IS_THIS_WINDOWS=True
 
 def run_command(command) :
     ''' wrapper around os.system '''
@@ -48,7 +49,8 @@ def run_eye_scan(label, scan_type, scan_rate = 32, max_prescale = 8, data_width 
     else :
         from run_es_host_pc import run_es_host, process_es_output
 
-        os.makedirs('%s/%s' % (PWD, SAMP_NAME))
+        if not os.path.exists('%s/%s' % (PWD, SAMP_NAME)):
+            os.makedirs('%s/%s' % (PWD, SAMP_NAME))
         os.chdir('%s/%s' % (PWD, SAMP_NAME))
         run_es_host(horz_step, vert_step, max_prescale, data_width, lpm_mode, scan_rate)
         process_es_output(horz_step, vert_step, max_prescale, data_width, lpm_mode, scan_rate)
@@ -58,7 +60,7 @@ def run_eye_scan(label, scan_type, scan_rate = 32, max_prescale = 8, data_width 
     run_command('mv %s.tar.gz %s/' % (SAMP_NAME, PWD))
     os.chdir(PWD)
     run_command('rm -rf %s/%s/' % (PWD, SAMP_NAME))
-    run_command('scp %s.tar.gz %s@%s:%s/' % (SAMP_NAME, remote_user, remote_system, remote_dir))
+    #run_command('scp %s.tar.gz %s@%s:%s/' % (SAMP_NAME, remote_user, remote_system, remote_dir))
 
     return
 
@@ -66,19 +68,21 @@ def make_plots(fn, scan_type, title, freq, fn2 = None) :
     if not os.path.exists(fn) :
         return False
     dn = fn.replace('.tar.gz', '').split('/')[-1]
-    afn = os.path.realpath(fn)
+    afn = os.path.relpath(fn)
     if fn2 :
         dn2 = fn2.replace('.tar.gz', '').split('/')[-1]
-        afn2 = os.path.realpath(fn2)
+        afn2 = os.path.relpath(fn2)
         run_command('rm -rf %s' % dn2)
-        run_command('mkdir -p %s' % dn2)
+        if not os.path.exists('%s' % dn2):
+            os.makedirs('%s' % dn2)
         os.chdir(dn2)
-        run_command('tar zxvf %s' % afn2)
+        run_command('tar zxvf ../%s' % afn2)
         os.chdir('../')
     run_command('rm -rf %s' % dn)
-    run_command('mkdir -p %s' % dn)
+    if not os.path.exists('%s' % dn):
+        os.makedirs('%s' % dn)
     os.chdir(dn)
-    run_command('tar zxvf %s' % afn)
+    run_command('tar zxvf ../%s' % afn)
     import parse_registers
     parse_registers.parse_registers(debug_fname = 'debug_end.output', regmap_fname = '../register_map.txt', output_fname = 'register_settings.txt', ibert_fname = '../register_default_ibert_640.txt', ibert_comp_outname = 'ibert_comp.txt')
     import central_error_plot
@@ -102,14 +106,11 @@ def make_plots(fn, scan_type, title, freq, fn2 = None) :
     run_command('sed -i \'s:DUMMY:%s:g\' %s/%s.tex' % (dn, dn, dn))
     run_command('sed -i \'s:FREQUENCY:%d:g\' %s/%s.tex' % (freq, dn, dn))
     run_command('mv central_ber.pdf central_error_freq.pdf %s/' % dn)
-    if os.path.exists('/usr/bin/a2ps') :
+    if not IS_THIS_WINDOWS:
         run_command('a2ps ibert_comp.txt -o %s/ibert_comp.ps' % dn)
         run_command('a2ps register_settings.txt -o %s/register_settings.ps' % dn)
-    else :
-        run_command('cat ibert_comp.txt | ssh ddboline@dboline.physics.sunysb.edu "cat - | a2ps -o -" > %s/ibert_comp.ps' % dn)
-        run_command('cat register_settings.txt | ssh ddboline@dboline.physics.sunysb.edu "cat - | a2ps -o -" > %s/register_settings.ps' % dn)
-    run_command('ps2pdf %s/ibert_comp.ps %s/ibert_comp.pdf' % (dn, dn))
-    run_command('ps2pdf %s/register_settings.ps %s/register_settings.pdf' % (dn, dn))
+        run_command('ps2pdf %s/ibert_comp.ps %s/ibert_comp.pdf' % (dn, dn))
+        run_command('ps2pdf %s/register_settings.ps %s/register_settings.pdf' % (dn, dn))
     if scan_type == 1 :
         run_command('sed -i \'s:TYPE:Bathtub:g\' %s/%s.tex' % (dn, dn))
     elif scan_type == 2 :
@@ -122,12 +123,14 @@ def make_plots(fn, scan_type, title, freq, fn2 = None) :
     os.chdir('%s' % dn)
     run_command('pdflatex %s.tex' % dn)
     run_command('pdflatex %s.tex' % dn)
-    if os.path.exists('/usr/bin/pdfunite') :
-        run_command('pdfunite %s.pdf ibert_comp.pdf register_settings.pdf %s_temp.pdf' % (dn, dn))
-    else :
-        run_command('scp %s.pdf ibert_comp.pdf register_settings.pdf ddboline@dboline.physics.sunysb.edu:/tmp/ ; ssh ddboline@dboline.physics.sunysb.edu "cd /tmp/ ; pdfunite %s.pdf ibert_comp.pdf register_settings.pdf %s_temp.pdf ; rm ibert_comp.pdf register_settings.pdf" ; scp ddboline@dboline.physics.sunysb.edu:/tmp/%s_temp.pdf .' % (dn, dn, dn, dn))
-    run_command('mv %s_temp.pdf %s.pdf' % (dn, dn))
-    run_command('mkdir -p ../../../pdf_files/')
+    if not IS_THIS_WINDOWS:
+        if os.path.exists('/usr/bin/pdfunite') :
+            run_command('pdfunite %s.pdf ibert_comp.pdf register_settings.pdf %s_temp.pdf' % (dn, dn))
+        else :
+            run_command('scp %s.pdf ibert_comp.pdf register_settings.pdf ddboline@dboline.physics.sunysb.edu:/tmp/ ; ssh ddboline@dboline.physics.sunysb.edu "cd /tmp/ ; pdfunite %s.pdf ibert_comp.pdf register_settings.pdf %s_temp.pdf ; rm ibert_comp.pdf register_settings.pdf" ; scp ddboline@dboline.physics.sunysb.edu:/tmp/%s_temp.pdf .' % (dn, dn, dn, dn))
+        run_command('mv %s_temp.pdf %s.pdf' % (dn, dn))
+    if not os.path.exists('../../../pdf_files/'):
+        os.makedirs('../../../pdf_files/')
     run_command('cp %s.pdf ../../../pdf_files/' % dn)
 
 if __name__ == '__main__' :

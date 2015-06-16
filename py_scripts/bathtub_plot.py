@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import ROOT
 import os
+os.sys.path.append('c:\\root_v5.34.25\\bin')
+import ROOT
 
 def fill_graph(fd, gr, factor = 1.0) :
     idx = 0

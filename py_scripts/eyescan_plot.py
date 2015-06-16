@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import ROOT
 import os
+os.sys.path.append('c:\\root_v5.34.25\\bin')
+import ROOT
+
 
 def read_csv_file(fname = None, title = None) :
     canv = ROOT.TCanvas('bathtub%s' % fname, 'bathtub%s' % fname)

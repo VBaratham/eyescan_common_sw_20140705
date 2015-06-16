@@ -24,9 +24,9 @@
 #include <semaphore.h>
 #include "safe_printf.h"
 
-#define MODIFY_CURSOR FALSE
-#define MODIFY_DRP_REGISTERS FALSE
-#define TURN_ON_CONFIG_REGISTERS FALSE
+#define MODIFY_CURSOR TRUE
+#define MODIFY_DRP_REGISTERS TRUE
+#define TURN_ON_CONFIG_REGISTERS TRUE
 // #define FREQUENCY 125
 // #define FREQUENCY 625
 #define FREQUENCY 640
@@ -280,6 +280,8 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
 #endif
 
     if( DEBUG ) xil_printf( "do resets\n");
+//     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 1 );
+//     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 1 );
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 1 | ( 1 << 8 ) );
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 1 | ( 1 << 8 ) );
 
