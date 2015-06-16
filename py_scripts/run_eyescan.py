@@ -143,7 +143,7 @@ if __name__ == '__main__' :
             try:
                 return range(int(x))
             except ValueError:
-                return [int(num) for num in x.split(',')]
+                return [int(num) for num in x.split(',') if num is not ""]
             return []
         argparser = argparse.ArgumentParser(description='test')
         argparser.add_argument('esrun') # Not used, just to consume one arg
