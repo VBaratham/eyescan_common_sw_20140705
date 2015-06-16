@@ -74,6 +74,15 @@ void xaxi_eyescan_write_channel_reg(u32 chanIdx, u32 chanRegOffset, u32 value);
 u32 xaxi_eyescan_read_channel_drp(u32 chanIdx, u32 drpOffset);
 void xaxi_eyescan_write_channel_drp(u32 chanIdx, u32 drpOffset, u32 value);
 
+/* Non-IO routies */
+int xaxi_eyescan_channel_tx_active(u32 chanIdx);
+int xaxi_eyescan_channel_rx_active(u32 chanIdx);
+int xaxi_eyescan_channel_active(u32 chanIdx);
+void xaxi_eyescan_reset_channel(u32 chanIdx);
+void xaxi_eyescan_reset_channel_after_rx_powerdown(u32 chanIdx);
+void xaxi_eyescan_enable_channel(u32 chanIdx);
+void xaxi_eyescan_disable_channel(u32 chanIdx);
+
 /* Low level I/O routines.  Ultimately these always end up being called. */
 u32 xaxi_eyescan_read(u32 *address);
 void xaxi_eyescan_write(u32 *address, u32 value);

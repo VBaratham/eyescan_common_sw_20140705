@@ -17,6 +17,8 @@
 #include "es_controller.h"
 #include "SysStatus.h"
 
+#include "xaxi_eyescan.h"
+
 #ifdef IS_OTC_BOARD
 #include "otcLib/uPod.h"
 #endif
@@ -40,6 +42,7 @@ int es_interface(int s, const void *data, size_t size) {
 
     char input_buf[RECV_BUF_SIZE+1];
 
+    // Copy the data into 'input_buf'
     memset( input_buf , 0 , RECV_BUF_SIZE+1 );
     strncpy( input_buf , data , size );
 
@@ -68,6 +71,7 @@ int es_interface(int s, const void *data, size_t size) {
         memset( tokens[idx] , 0 , 20 );
     }
 
+    // tokenize (strtok) the input and store in tokens[]
     temp_str = strtok( input_buf , " " );
     int number_tokens = 0;
     while( temp_str != NULL ) {
@@ -76,6 +80,7 @@ int es_interface(int s, const void *data, size_t size) {
         temp_str = strtok( NULL , " {},\r\n");
     }
 
+    // identify the command
     for( idx = 0 ; idx < NTELNETCOMMANDS ; ++idx ) {
         if( !strncmp( commands[idx] , tokens[0] , strlen(commands[idx]) ) )
             command_type = idx;
@@ -95,6 +100,7 @@ int es_interface(int s, const void *data, size_t size) {
         }
 
         int curr_lane = strtoul( tokens[1] , pEnd , 0);
+        xaxi_eyescan_enable_channel(curr_lane);
         eyescan_lock();
         eye_scan * curr_eyescan = get_eye_scan_lane( curr_lane );
         if( curr_eyescan == NULL ) {
@@ -111,7 +117,7 @@ int es_interface(int s, const void *data, size_t size) {
         curr_eyescan->vert_step_size = strtoul( tokens[5] , pEnd , 0);
         curr_eyescan->lpm_mode = strtoul( tokens[6] , pEnd , 0);
         curr_eyescan->max_horz_offset = strtoul( tokens[7] , pEnd , 0); // same as rate?
-                
+
         //retval = configure_eye_scan( curr_eyescan , curr_lane );
         
         curr_eyescan->enable = TRUE; // enable the lane
@@ -229,9 +235,15 @@ int es_interface(int s, const void *data, size_t size) {
             global_upload_unrdy();
             return 0;
         }
+
+        // Disable the eyescan
         int curr_lane = strtoul( tokens[1] , pEnd , 0);
         eye_scan * curr_eyescan = get_eye_scan_lane( curr_lane );
         curr_eyescan->enable = FALSE;
+
+        // Turn off the GTX for this channel
+        xaxi_eyescan_disable_channel(curr_lane);
+
         return 0;
     }
 

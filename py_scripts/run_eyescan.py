@@ -4,6 +4,7 @@
 import os
 import glob
 import datetime
+import argparse
 
 remote_user = 'ddboline'
 remote_system = 'dboline.physics.sunysb.edu'
@@ -16,11 +17,12 @@ IS_THIS_WINDOWS=True
 def run_command(command) :
     ''' wrapper around os.system '''
     if TURN_ON_COMMANDS :
-        os.system(command)
+        return os.system(command)
     else :
         print command
+        return 0
 
-def run_eye_scan(label, scan_type, scan_rate = 32, max_prescale = 8, data_width = 40, lpm_mode = 0) :
+def run_eye_scan(label, scan_type, scan_rate = 32, channels = range(48), max_prescale = 8, data_width = 40, lpm_mode = 0) :
     '''
     Run eye scan, taking scan_type and scan_rate as inputs.  Communicate with OTC through network socket.
     Use either the old tcl scripts, or newly written run_es_host_pc.
@@ -52,8 +54,8 @@ def run_eye_scan(label, scan_type, scan_rate = 32, max_prescale = 8, data_width 
         if not os.path.exists('%s/%s' % (PWD, SAMP_NAME)):
             os.makedirs('%s/%s' % (PWD, SAMP_NAME))
         os.chdir('%s/%s' % (PWD, SAMP_NAME))
-        run_es_host(horz_step, vert_step, max_prescale, data_width, lpm_mode, scan_rate)
-        process_es_output(horz_step, vert_step, max_prescale, data_width, lpm_mode, scan_rate)
+        run_es_host(horz_step, vert_step, max_prescale, data_width, lpm_mode, scan_rate, channels)
+        process_es_output(horz_step, vert_step, max_prescale, data_width, lpm_mode, scan_rate, channels)
 
     run_command('tar zcvf %s.tar.gz *.dump *.csv *.output *.txt' % (SAMP_NAME))
     run_command('rm *.dump *.csv *.txt *.output')
@@ -89,7 +91,6 @@ def make_plots(fn, scan_type, title, freq, fn2 = None) :
     central_error_plot.central_error_plot(fname = 'center_error.txt', title = 'Central BER')
     central_error_plot.central_error_frequency_plot(fname = 'all.dump', title = 'Central Bit Error Frequency')
     gl = glob.glob('Ch*.csv')
-    nf = len(gl)
     for fn in gl :
         if scan_type == 1 :
             import bathtub_plot
@@ -115,11 +116,14 @@ def make_plots(fn, scan_type, title, freq, fn2 = None) :
         run_command('sed -i \'s:TYPE:Bathtub:g\' %s/%s.tex' % (dn, dn))
     elif scan_type == 2 :
         run_command('sed -i \'s:TYPE:Eyescan:g\' %s/%s.tex' % (dn, dn))
-    for idx in range(0, nf) :
+    for idx in range(48) :
         if not fn2 :
-            run_command('mv Ch%d.csv.pdf %s/%s_Ch%d.pdf' % (idx, dn, dn, idx))
+            mv_success = run_command('mv Ch%d.csv.pdf %s/%s_Ch%d.pdf' % (idx, dn, dn, idx))
         else :
-            run_command('mv Ch%d.csvCh%d.csv.pdf %s/%s_Ch%d.pdf' % (idx, idx, dn, dn, idx))
+            mv_success = run_command('mv Ch%d.csvCh%d.csv.pdf %s/%s_Ch%d.pdf' % (idx, idx, dn, dn, idx))
+        if mv_success != 0:
+            print "No data for channel %s, removing from pdf" % idx
+            run_command('sed -i /Ch%s.pdf/d %s/%s.tex' % (idx, dn, dn))
     os.chdir('%s' % dn)
     run_command('pdflatex %s.tex' % dn)
     run_command('pdflatex %s.tex' % dn)
@@ -135,25 +139,24 @@ def make_plots(fn, scan_type, title, freq, fn2 = None) :
 
 if __name__ == '__main__' :
     if os.sys.argv[1] == 'esrun' :
-        scan_type = 1
-        scan_label = 'default'
-        scan_rate = 32
-        if len(os.sys.argv) > 2 :
-            scan_label = os.sys.argv[2]
-        if len(os.sys.argv) > 3 :
-            try :
-                if int(os.sys.argv[3]) == 2 :
-                    scan_type = 2
-            except :
-                pass
-        if len(os.sys.argv) > 4 :
-            try :
-                scan_rate = int(os.sys.argv[4])
-            except :
-                pass
-        print 'scan will be %d-d, label will be %s, rate will be %d' % (scan_type, scan_label, scan_rate)
+        def int_or_list(x):
+            try:
+                return range(int(x))
+            except ValueError:
+                return [int(num) for num in x.split(',')]
+            return []
+        argparser = argparse.ArgumentParser(description='test')
+        argparser.add_argument('esrun') # Not used, just to consume one arg
+        argparser.add_argument('label')
+        argparser.add_argument('scan_type', type=int, choices=[1, 2], default=1, help="1 = bathtub, 2 = eyescan")
+        argparser.add_argument('--scan_rate', type=int, default=32)
+        argparser.add_argument('--channels', type=int_or_list, default=range(48))
+        argparser.add_argument('--disable-channels', type=int_or_list, default=[])
+        a = argparser.parse_args()
 
-        exit(run_eye_scan(scan_label, scan_type, scan_rate))
+        channels = sorted(set(a.channels) - set(a.disable_channels))
+        exit(run_eye_scan(a.label, a.scan_type, a.scan_rate, channels))
+        
     elif os.sys.argv[1] == 'esplot' :
         tarfile = None
         scan_type = 1

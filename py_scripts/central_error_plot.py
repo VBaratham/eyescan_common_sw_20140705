@@ -49,11 +49,12 @@ def central_error_frequency_plot(fname = 'all.dump', title = 'Central Bit Error 
 
     bins = np.linspace(0, 256, 256)
     pl.clf()
-    pl.hist( center_errors[center_errors[:, -1] != 0][:, -1], bins=bins )
-    pl.xlim(0,256)
-    pl.title(title)
-    pl.xlabel('central error count')
-    pl.ylabel('number of occurances')
+    if any(center_errors[:,-1] != 0):
+        pl.hist( center_errors[center_errors[:, -1] != 0][:, -1], bins=bins )
+        pl.xlim(0,256)
+        pl.title(title)
+        pl.xlabel('central error count')
+        pl.ylabel('number of occurances')
     pl.savefig('central_error_freq.pdf')
     
     return

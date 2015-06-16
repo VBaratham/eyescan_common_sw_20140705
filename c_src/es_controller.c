@@ -280,26 +280,9 @@ int init_eye_scan(eye_scan* p_lane, u8 curr_lane) {
 #endif
 
     if( DEBUG ) xil_printf( "do resets\n");
-//     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 1 );
-//     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 1 );
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_TXCFG, 1 | ( 1 << 8 ) );
     xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RXCFG, 1 | ( 1 << 8 ) );
-
-    //u32 chan_resets[4] = { 0xF00 , 0x20 , 0x10 , 0xc0 };
-    u32 chan_resets[4] = { 0xF00 , 0x20 , 0x10 , 0x0 };
-    for( i=0 ; i<4 ; i++ ) {
-    	xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, chan_resets[i] );
-    	xaxi_eyescan_write_channel_reg(curr_lane, XAXI_EYESCAN_RESET, 0);
-    }
-
-    sleep(100);
-    u32 reset_val = xaxi_eyescan_read_channel_reg(curr_lane,XAXI_EYESCAN_RESET);
-    i=0;
-    while( reset_val != 0x0000000F && i < 5 ) {
-        xil_printf("Channel %d: Reset register(init): %08x\n",curr_lane,reset_val);
-        sleep(100);
-        i++;
-    }
+    xaxi_eyescan_reset_channel(curr_lane);
 
 #if DEBUG
     u32 txuserready = xaxi_eyescan_read_channel_reg( curr_lane , XAXI_EYESCAN_TXCFG );
@@ -356,6 +339,11 @@ void *es_controller_thread(char * arg) {
         memset( eye_scan_lanes[curr_lane] , 0 , sizeof(eye_scan) );
         init_eye_scan_struct( eye_scan_lanes[curr_lane] );
     }
+
+    // Turn off all channels
+    u32 i;
+    for (i = 0; i < n_gtx; ++i)
+    	xaxi_eyescan_disable_channel(i);
 
     if( DEBUG ) xil_printf( "memory initialized\n");
 

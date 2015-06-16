@@ -21,6 +21,8 @@
 /*JDH #include "mfs_config.h" */
 #include "lwip/inet.h"
 #include "lwip/sockets.h"
+#include "drp.h"
+#include "xaxi_eyescan.h"
 
 #include "webserver.h"
 /* JDH #include "platform_gpio.h" */
@@ -123,7 +125,7 @@ int do_http_get(int sd, char *req, int rlen)
 #if POLL_UPOD_TEMPS
     char * upod_pagefmt = "%s <CENTER><B>uPod number %d at I2C Address %p</B></CENTER><BR><HR>"
             "Status = 0x%02x<BR>"
-            "Temperature %d.%03d C<BR>"
+    		"Temperature %d.%03d C<BR>"
             "3.3V = %d uV<BR>"
             "2.5V = %d uV<BR><HR>";
 
@@ -135,6 +137,26 @@ int do_http_get(int sd, char *req, int rlen)
                 100*upodStatus[idx]->v33, 100*upodStatus[idx]->v25 );
     }
 #endif
+
+    // Display error counts in each channel
+//    char * ber_pagefmt = "%s <CENTER><B>GTX number %d</B></CENTER><BR><HR>"
+//    		"Error count = %d <BR><HR>";
+//    char * ber_pagefmt = "%s %d %d\n";
+//    u8 i;
+//    for (i = 0; i < 48; ++i) {
+//    	if (xaxi_eyescan_channel_active((u32) i)){
+//			u16 error_count = drp_read(ES_ERROR_COUNT, i);
+//	//	u16 sample_count = drp_read(ES_SAMPLE_COUNT, i);
+//	//		u16 prescale = drp_read(ES_PRESCALE, i);
+//			xil_printf("errcnt=%d\n", error_count);
+//	//		double ber = ((float) error_count) / ((float) (sample_count * 32 << (1 + prescale)));
+//	//		xil_printf("ber=%f\n", ber);
+//			safe_sprintf(pbuf, ber_pagefmt, pbuf, i, error_count);
+//    	}
+//    }
+
+//    xil_printf("%s\n", pbuf);
+
     n=strlen(pbuf);
     if ((w = lwip_write(sd, pbuf, n)) < 0 ) {
         xil_printf("error writing web page data (part 1) to socket\r\n");

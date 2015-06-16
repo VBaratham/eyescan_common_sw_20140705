@@ -78,13 +78,17 @@ class upod_monitor :
 
 
 
-def run_es_host(horz_step = 1, vert_step = 8, max_prescale = 8, datawidth = 32, lpm_mode = 0, rate = 32) :
+def run_es_host(horz_step = 1, vert_step = 8, max_prescale = 8, datawidth = 32, lpm_mode = 0, rate = 32, channels = range(NUMBER_OF_CHANNELS)) :
     if rate not in valid_rates or datawidth not in valid_widths :
         return 0
 
     for idx in range(0, NUMBER_OF_CHANNELS) :
-        print 'Writing settings to channel %d' % idx
-        send_command('esinit %s %d %d %d %d %d %d"' % (idx, max_prescale, horz_step, datawidth, vert_step, lpm_mode, rate))
+        if idx in channels:
+            print 'Writing settings to channel %d' % idx
+            send_command('esinit %s %d %d %d %d %d %d"' % (idx, max_prescale, horz_step, datawidth, vert_step, lpm_mode, rate))
+        else:
+            print 'Disabling channel %d' % idx
+            send_command('esdisable %s' % idx)
 
     fdbg = open('debug_start.output', 'w')
     fdbg.write(send_command('dbgeyescan'))
@@ -127,10 +131,10 @@ def run_es_host(horz_step = 1, vert_step = 8, max_prescale = 8, datawidth = 32, 
 
             continue
         else :
+            print 'SCAN IS DONE'
             dumpf = open('all.dump', 'w')
             send_command('esread all', timeout = 60, outfile = dumpf)
             dumpf.close()
-            print 'SCAN IS DONE'
             send_command('esdone')
             break
 
@@ -198,7 +202,7 @@ class es_pixel :
         print 'pixel %d %d %d %d %d %d %d' % (self.curr_pixel, self.horz_offset, self.vert_offset, self.error_count, self.sample_count, self.prescale, self.ut_sign)
 
 
-def process_es_output(horz_step = 1, vert_step = 8, max_prescale = 8, datawidth = 32, lpm_mode = 0, rate = 40, dumpfile = 'all.dump') :
+def process_es_output(horz_step = 1, vert_step = 8, max_prescale = 8, datawidth = 32, lpm_mode = 0, rate = 40, channels = range(NUMBER_OF_CHANNELS), dumpfile = 'all.dump') :
 
     all_lanes = {}
     for lane in range(0, NUMBER_OF_CHANNELS) :
@@ -217,7 +221,12 @@ def process_es_output(horz_step = 1, vert_step = 8, max_prescale = 8, datawidth 
     asciif = open('ascii_eye.txt', 'w')
     cerrf = open('center_error.txt', 'w')
     for lane in range(0, NUMBER_OF_CHANNELS) :
+
         asciif.write('CHANNEL %d\n' % lane)
+
+        if lane not in channels:
+            cerrf.write("%s 0 -1 0\n" % lane)
+            continue
 
         idx = 0
 
