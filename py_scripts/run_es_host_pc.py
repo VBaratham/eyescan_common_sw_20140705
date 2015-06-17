@@ -150,6 +150,8 @@ def run_es_host(horz_step = 1, vert_step = 8, max_prescale = 8, datawidth = 32, 
     fdbg.close()
 
     print 'ALL TEST COMPLETED!'
+    
+    send_command('esdisable all')
 
     return
 
